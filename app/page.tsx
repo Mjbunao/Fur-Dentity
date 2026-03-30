@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { db, auth, RecaptchaVerifier, signInWithPhoneNumber } from '@/lib/firebase';
 import { ref, get, child } from 'firebase/database';
+import type { ConfirmationResult } from 'firebase/auth';
 import {
   TextField,
   Button,
@@ -33,7 +34,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [showOtp, setShowOtp] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult | null>(null);
   const [foundAdmin, setFoundAdmin] = useState<Admin | null>(null);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -47,6 +49,9 @@ export default function LoginPage() {
   const [otpAttemptsLeft, setOtpAttemptsLeft] = useState(MAX_OTP_ATTEMPTS);
   const [otpTimeLeft, setOtpTimeLeft] = useState(0);
   const [otpExpired, setOtpExpired] = useState(false);
+
+  const getWindowWithRecaptcha = () =>
+    window as Window & typeof globalThis & { recaptchaVerifier?: RecaptchaVerifier };
 
   useEffect(() => {
     if (!showOtp || otpTimeLeft <= 0) {
@@ -72,8 +77,11 @@ export default function LoginPage() {
   }, [showOtp, otpTimeLeft]);
 
   const setupRecaptcha = () => {
-    if (typeof window !== 'undefined' && (window as any).recaptchaVerifier) {
-      return (window as any).recaptchaVerifier;
+    if (typeof window !== 'undefined') {
+      const windowWithRecaptcha = getWindowWithRecaptcha();
+      if (windowWithRecaptcha.recaptchaVerifier) {
+        return windowWithRecaptcha.recaptchaVerifier;
+      }
     }
 
     const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -81,7 +89,7 @@ export default function LoginPage() {
     });
 
     if (typeof window !== 'undefined') {
-      (window as any).recaptchaVerifier = verifier;
+      getWindowWithRecaptcha().recaptchaVerifier = verifier;
     }
 
     return verifier;
@@ -95,16 +103,7 @@ export default function LoginPage() {
     setFormSuccess('');
   };
 
-  const resetOtpState = () => {
-    setOtp('');
-    setOtpError('');
-    setConfirmationResult(null);
-    setOtpAttemptsLeft(MAX_OTP_ATTEMPTS);
-    setOtpTimeLeft(0);
-    setOtpExpired(false);
-  };
-
-  const startOtpSession = (result: any) => {
+  const startOtpSession = (result: ConfirmationResult) => {
     setConfirmationResult(result);
     setShowOtp(true);
     setOtp('');
@@ -251,7 +250,7 @@ export default function LoginPage() {
       sessionStorage.setItem('adminId', foundAdmin.id);
       sessionStorage.setItem('isLoggedIn', 'true');
 
-      router.push('/about');
+      router.push('/dashboard');
     } catch (err) {
       console.error(err);
 
