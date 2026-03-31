@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { auth, signOut } from '@/lib/firebase';
+import type { AdminRole } from '@/lib/auth/types';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -16,21 +18,23 @@ const navItems = [
 ];
 
 type DashboardShellProps = {
+  adminEmail: string;
+  adminName?: string;
+  adminRole: AdminRole;
   children: React.ReactNode;
 };
 
-export default function DashboardShell({ children }: DashboardShellProps) {
+export default function DashboardShell({
+  adminEmail,
+  adminName,
+  adminRole,
+  children,
+}: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-
-  useEffect(() => {
-    if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-      router.replace('/');
-    }
-  }, [router]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,9 +48,16 @@ export default function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    router.replace('/');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/session/logout', {
+        method: 'POST',
+      });
+    } finally {
+      await signOut(auth).catch(() => undefined);
+      sessionStorage.clear();
+      router.replace('/');
+    }
   };
 
   return (
@@ -163,8 +174,14 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                       />
                     </div>
                     <div className="hidden text-left md:block">
-                      <p className="text-sm font-semibold text-slate-900">Admin</p>
-                      <p className="text-xs text-slate-500">Web administrator</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {adminName || 'Admin'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {adminRole === 'super_admin'
+                          ? 'Super administrator'
+                          : 'System administrator'}
+                      </p>
                     </div>
                   </button>
 
@@ -174,7 +191,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                         type="button"
                         className="flex w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                       >
-                        Settings
+                        {adminEmail}
                       </button>
                       <button
                         type="button"

@@ -40,6 +40,6 @@ select {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--brand) 28%, white);
+  background: color-mix(in srgb, var(--primary) 28%, white);
   color: var(--foreground);
 }
