@@ -1,0 +1,10 @@
+export {default as DashboardIcon}  from '@mui/icons-material/Dashboard';
+export {default as ReportProblemRoundedIcon} from '@mui/icons-material/ReportProblemRounded';
+export {default as PetsSharpIcon} from '@mui/icons-material/PetsSharp';
+export {default as MonetizationOnSharpIcon} from '@mui/icons-material/MonetizationOnSharp';
+export {default as PeopleAltSharpIcon} from '@mui/icons-material/PeopleAltSharp';
+export {default as HealthAndSafetySharpIcon} from '@mui/icons-material/HealthAndSafetySharp';
+export {default as GpsFixedSharpIcon} from '@mui/icons-material/GpsFixedSharp';
+export {default as DeleteOutlineIcon} from '@mui/icons-material/DeleteOutline';
+export {default as SearchIcon} from '@mui/icons-material/Search';
+export {default as VisibilityRoundedIcon} from '@mui/icons-material/VisibilityRounded';

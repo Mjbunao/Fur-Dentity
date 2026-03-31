@@ -7,14 +7,17 @@ import { useEffect, useRef, useState } from 'react';
 import { auth, signOut } from '@/lib/firebase';
 import type { AdminRole } from '@/lib/auth/types';
 
+import { DashboardIcon, ReportProblemRoundedIcon, PetsSharpIcon, MonetizationOnSharpIcon,PeopleAltSharpIcon,HealthAndSafetySharpIcon,GpsFixedSharpIcon } from '@/components/icons';
+import { colors } from '@mui/material';
+
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/reports', label: 'Reports' },
-  { href: '/adoption', label: 'Adoption' },
-  { href: '/donation', label: 'Donation' },
-  { href: '/users', label: 'Users' },
-  { href: '/pets', label: 'Pets' },
-  { href: '/gps-devices', label: 'GPS Device' },
+  { href: '/dashboard', label: 'Dashboard', icon: <DashboardIcon sx={{fontSize: 20}}/> },
+  { href: '/reports', label: 'Reports', icon: <ReportProblemRoundedIcon sx={{fontSize: 20}}/> },
+  { href: '/adoption', label: 'Adoption', icon: <HealthAndSafetySharpIcon sx={{fontSize: 20}}/> },
+  { href: '/donation', label: 'Donation', icon: <MonetizationOnSharpIcon sx={{fontSize: 20}}/> },
+  { href: '/users', label: 'Users', icon: <PeopleAltSharpIcon sx={{fontSize: 20}}/> },
+  { href: '/pets', label: 'Pets', icon: <PetsSharpIcon sx={{fontSize: 20}}/> },
+  { href: '/gps-devices', label: 'GPS Device', icon: <GpsFixedSharpIcon sx={{fontSize: 20}}/> },
 ];
 
 type DashboardShellProps = {
@@ -61,9 +64,9 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900">
       <div className="flex min-h-screen flex-col md:flex-row">
-        <aside className="w-full border-b border-slate-200 bg-white md:sticky md:top-0 md:h-screen md:w-72 md:border-b-0 md:border-r">
+        <aside className="w-full border-b border-slate-200 bg-white md:sticky md:top-0 md:h-screen md:w-60 md:border-b-0 md:border-r">
           <div className="flex justify-center px-6 py-5">
             <div className="flex items-center gap-3">
               <Image
@@ -73,11 +76,11 @@ export default function DashboardShell({
                 height={38}
                 className="h-10 w-10 rounded-xl object-cover"
               />
-              <h1 className="mt-3 text-2xl font-bold">Fur-Dentity</h1>
+              <h1 className="mt-3 text-xl font-bold">Fur-Dentity</h1>
             </div>
           </div>
 
-          <nav className="flex text-center gap-2 overflow-x-auto px-4 pb-4 md:flex-col md:overflow-visible md:px-4">
+          <nav className="flex text-center gap-1 overflow-x-auto px-4 pb-4 md:flex-col md:overflow-visible md:px-4">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
 
@@ -85,13 +88,21 @@ export default function DashboardShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-2xl py-2 text-sm font-medium transition ${
+                  className={`flex items-center gap-3 rounded-2xl px-10 py-2 text-sm  transition ${
                     isActive
-                      ? 'bg-warning opacity-50 text-white'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'text-primary bg-slate-100'
+                      : ' text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  {item.label}
+                  {item.icon ? (
+                    <span className="flex h-5 w-5 items-center justify-center">
+                      {item.icon}
+                    </span>
+                  ) : null}
+                  <span className={isActive ? 'font-bold' : 'font-normal'}>
+                    {item.label}
+                  </span>
+
                 </Link>
               );
             })}
@@ -100,7 +111,7 @@ export default function DashboardShell({
 
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-            <div className="flex items-center justify-between px-6 py-4 md:px-10">
+            <div className="flex items-center justify-between px-6 py-2 md:px-10 ">
               <div>
           
                 <h2 className="text-lg font-semibold text-slate-900">

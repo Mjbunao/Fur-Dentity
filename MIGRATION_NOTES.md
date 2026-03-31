@@ -99,6 +99,8 @@ Completed:
 - Realtime Database rules confirmed must allow authenticated users to read their own `admins/{uid}` record.
 - Super-admin-only system-admin account creation feature implemented.
 - Forced password-change flow implemented for newly created `system_admin` accounts.
+- Users page migrated from the legacy project into a new MUI-based table flow with search, sticky headers, sorting, pagination, user details dialog, and super-admin-only delete action.
+- Protected users API routes added for listing users, loading user details with pets, and deleting users through server-verified requests.
 
 In progress:
 
@@ -109,6 +111,7 @@ Not done yet:
 - System-admin permission filtering across features.
 - Feature-by-feature migration of legacy dashboard sections into Next.js pages/components.
 - Full server-side authorization for privileged mutations.
+- Runtime testing of the new users page against current Realtime Database `users` and `pets` rules.
 
 ## Working Rules
 
@@ -135,8 +138,13 @@ Done:
 - Verified secure `super_admin` login works after fixing Realtime Database rules for `admins/{uid}` reads.
 - Added super-admin-only system-admin account creation on the `Users` route.
 - Added forced password-change route and session refresh so new `system_admin` accounts must update their temporary password before dashboard access.
+- Migrated the legacy `users` section into the Next.js `/users` page.
+- Added a Material UI users table with search, sticky header, sorting, pagination, and a details dialog showing registered pets.
+- Added protected `/api/users` and `/api/users/[userId]` route handlers.
+- Added super-admin-only user deletion on the new users page.
 
 Next:
 
 - Continue migrating dashboard features from the legacy project one feature at a time.
 - Mark each new feature as shared or `super_admin` only.
+- Test the new users page in the browser and verify Realtime Database rules allow the protected server routes to read `users` and `pets` and delete `users` when invoked by `super_admin`.
