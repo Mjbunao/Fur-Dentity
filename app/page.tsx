@@ -13,6 +13,7 @@ import {
   Alert,
   Collapse,
 } from '@mui/material';
+import { LoginRoundedIcon } from '@/components/icons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -252,6 +253,7 @@ export default function LoginPage() {
           variant="contained"
           fullWidth
           onClick={handleLogin}
+          startIcon={loading ? undefined : <LoginRoundedIcon sx={{ fontSize: 18 }} />}
           sx={{ mt: 2, fontWeight: 'bold' }}
           disabled={loading}
         >

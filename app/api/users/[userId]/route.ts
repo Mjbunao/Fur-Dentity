@@ -114,7 +114,7 @@ export async function GET(request: Request, context: RouteContext) {
           type: petDetails.petType || 'Unknown',
           breed: petDetails.breed || 'Unknown',
           age: petDetails.age ? String(petDetails.age) : 'N/A',
-          image: petDetails.image || '/Fur-Dentity/Profile.webp',
+          image: petDetails.image || '/Profile.webp',
           colors: Object.values(colorMap).filter(Boolean),
         };
       });
@@ -126,7 +126,7 @@ export async function GET(request: Request, context: RouteContext) {
         email: user.email || 'No email',
         contact: user.contactNumber || 'No contact',
         address: user.address?.fullAddress || 'No address',
-        profilePic: user.profilePic || '/Fur-Dentity/Profile.webp',
+        profilePic: user.profilePic || '/Profile.webp',
       },
       pets,
     });

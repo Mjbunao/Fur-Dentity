@@ -1,15 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Stack,
+  TextField,
+  CircularProgress,
+} from '@mui/material';
+import {
+  AdminPanelSettingsIcon,
+  CloseRoundedIcon,
+} from '@/components/icons';
 import { auth } from '@/lib/firebase';
 
 type CreateSystemAdminCardProps = {
   canManageAdmins: boolean;
+  onCreated?: () => void;
 };
 
-export default function CreateSystemAdminCard({
+export default function CreateSystemAdminDialog({
   canManageAdmins,
+  onCreated,
 }: CreateSystemAdminCardProps) {
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
@@ -20,6 +39,22 @@ export default function CreateSystemAdminCard({
   const resetMessages = () => {
     setError('');
     setSuccess('');
+  };
+
+  const resetForm = () => {
+    setName('');
+    setEmail('');
+    setTemporaryPassword('');
+    resetMessages();
+  };
+
+  const handleClose = () => {
+    if (loading) {
+      return;
+    }
+
+    setOpen(false);
+    resetForm();
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -75,6 +110,11 @@ export default function CreateSystemAdminCard({
       setName('');
       setEmail('');
       setTemporaryPassword('');
+      onCreated?.();
+      setTimeout(() => {
+        setOpen(false);
+        resetForm();
+      }, 900);
     } catch (submitError) {
       console.error(submitError);
       setError('Something went wrong while creating the system admin account.');
@@ -84,89 +124,114 @@ export default function CreateSystemAdminCard({
   };
 
   return (
-    <section className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">
-            Create System Admin
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            This is a super-admin-only feature. It creates a Firebase Auth user
-            and writes a matching <code>admins/{'{uid}'}</code> record with the
-            <code>system_admin</code> role and <code>mustChangePassword</code>{' '}
-            set to <code>true</code>.
-          </p>
-        </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            canManageAdmins
-              ? 'bg-emerald-100 text-emerald-700'
-              : 'bg-slate-100 text-slate-500'
-          }`}
+    <>
+      <div className="flex justify-end">
+        <Button
+          variant="contained"
+          color="primary"
+          size="small"
+          onClick={() => setOpen(true)}
+          disabled={!canManageAdmins}
+          startIcon={<AdminPanelSettingsIcon sx={{ fontSize: 18 }} />}
+          sx={{ px: 1.75, py: 0.75 }}
         >
-          {canManageAdmins ? 'Super admin only' : 'Locked for this role'}
-        </span>
+          Create system admin
+        </Button>
       </div>
 
-      <form className="mt-6 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-          Full name
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder="System admin name"
-            disabled={loading || !canManageAdmins}
-          />
-        </label>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
+        maxWidth="sm"
+        slotProps={{
+          paper: {
+            sx: {
+              overflow: 'hidden',
+              borderRadius: '12px',
+              border: '1px solid',
+              borderColor: 'rgba(0, 84, 255, 0.12)',
+              boxShadow: '0 24px 60px rgba(15, 23, 42, 0.14)',
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            px: { xs: 2.5, sm: 3 },
+            pt: 2.5,
+            pb: 1,
+          }}
+        >
+          <DialogContentText sx={{ mt: 0.75, color: 'text.secondary' }}>
+            Create a new system admin account with a temporary password. They will be asked to change it on first sign in.
+          </DialogContentText>
+        </DialogTitle>
 
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder="admin@example.com"
-            disabled={loading || !canManageAdmins}
-          />
-        </label>
+        <DialogContent sx={{ px: { xs: 2.5, sm: 3 }, py: 3 }}>
+          <form onSubmit={handleSubmit}>
+            <Stack spacing={2.25}>
+              <TextField
+                label="Full name"
+                placeholder="System admin name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                size="small"
+                fullWidth
+                disabled={loading || !canManageAdmins}
+              />
 
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-700 md:col-span-2">
-          Temporary password
-          <input
-            type="text"
-            value={temporaryPassword}
-            onChange={(event) => setTemporaryPassword(event.target.value)}
-            className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder="At least 6 characters"
-            disabled={loading || !canManageAdmins}
-          />
-        </label>
+              <TextField
+                label="Email"
+                placeholder="admin@example.com"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                size="small"
+                fullWidth
+                disabled={loading || !canManageAdmins}
+              />
 
-        {error ? (
-          <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 md:col-span-2">
-            {error}
-          </p>
-        ) : null}
+              <TextField
+                label="Temporary password"
+                placeholder="At least 6 characters"
+                type="text"
+                value={temporaryPassword}
+                onChange={(event) => setTemporaryPassword(event.target.value)}
+                size="small"
+                fullWidth
+                disabled={loading || !canManageAdmins}
+                helperText="Share this with the new system admin."
+              />
 
-        {success ? (
-          <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 md:col-span-2">
-            {success}
-          </p>
-        ) : null}
+              {error ? <Alert severity="error">{error}</Alert> : null}
+              {success ? <Alert severity="success">{success}</Alert> : null}
 
-        <div className="md:col-span-2">
-          <button
-            type="submit"
-            disabled={loading || !canManageAdmins}
-            className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? 'Creating account...' : 'Create system admin'}
-          </button>
-        </div>
-      </form>
-    </section>
+              <DialogActions sx={{ px: 0, pb: 0, pt: 0.5 }}>
+                <Button
+                  onClick={handleClose}
+                  disabled={loading}
+                  startIcon={<CloseRoundedIcon sx={{ fontSize: 18 }} />}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  color="primary"
+                  variant="contained"
+                  disabled={loading || !canManageAdmins}
+                  startIcon={
+                    loading ? <CircularProgress size={14} color="inherit" /> : <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />
+                  }
+                  sx={{ minWidth: 190 }}
+                >
+                  {loading ? 'Creating account...' : 'Create system admin'}
+                </Button>
+              </DialogActions>
+            </Stack>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

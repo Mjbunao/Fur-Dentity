@@ -1,5 +1,4 @@
 import DashboardShell from './DashboardShell';
-import ThemeRegistry from '../ThemeRegistry';
 import { requireSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 
@@ -20,7 +19,7 @@ export default async function DashboardLayout({
       adminName={session.name}
       adminRole={session.role}
     >
-      <ThemeRegistry>{children}</ThemeRegistry>
+      {children}
     </DashboardShell>
   );
 }

@@ -11,6 +11,7 @@ import {
   Collapse,
   Stack,
 } from '@mui/material';
+import { SaveRoundedIcon } from '@/components/icons';
 
 export default function ChangePasswordForm() {
   const router = useRouter();
@@ -150,6 +151,7 @@ export default function ChangePasswordForm() {
           color="warning"
           variant="contained"
           fullWidth
+          startIcon={loading ? undefined : <SaveRoundedIcon sx={{ fontSize: 18 }} />}
           sx={{ mt: 1, fontWeight: 'bold' }}
           disabled={loading}
         >

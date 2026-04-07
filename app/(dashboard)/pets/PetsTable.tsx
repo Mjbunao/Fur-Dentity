@@ -26,24 +26,26 @@ import { auth } from '@/lib/firebase';
 import { DeleteOutlineIcon, SearchIcon, VisibilityRoundedIcon } from '@/components/icons';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 
-type UserRow = {
+type PetRow = {
   id: string;
   name: string;
-  email: string;
-  contact: string;
+  type: string;
+  breed: string;
+  birthdate: string;
+  image: string;
+  owner: string;
   address: string;
-  profilePic: string;
-  petsCount: number;
+  contact: string;
 };
 
-type SortKey = 'name' | 'email' | 'contact' | 'petsCount';
+type SortKey = 'name' | 'type' | 'breed' | 'owner';
 type SortOrder = 'asc' | 'desc';
 
-const headCells: Array<{ id: SortKey; label: string; numeric?: boolean }> = [
+const headCells: Array<{ id: SortKey; label: string }> = [
   { id: 'name', label: 'Name' },
-  { id: 'email', label: 'Email Address' },
-  { id: 'contact', label: 'Contact' },
-  { id: 'petsCount', label: 'Registered Pets', numeric: true },
+  { id: 'type', label: 'Type' },
+  { id: 'breed', label: 'Breed' },
+  { id: 'owner', label: 'Owner' },
 ];
 
 const tableContainerSx = {
@@ -52,8 +54,8 @@ const tableContainerSx = {
   borderColor: 'grey.200',
 };
 
-export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
-  const [rows, setRows] = useState<UserRow[]>([]);
+export default function PetsTable({ adminRole }: { adminRole: AdminRole }) {
+  const [rows, setRows] = useState<PetRow[]>([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -63,56 +65,51 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PetRow | null>(null);
 
   const canDelete = adminRole === 'super_admin';
 
-  const getAuthHeaders = async () => {
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      throw new Error('Your session expired. Please sign in again.');
-    }
-
-    const idToken = await currentUser.getIdToken();
-
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${idToken}`,
-    };
-  };
-
-  const loadUsers = useEffectEvent(async () => {
+  const loadPets = useEffectEvent(async () => {
     try {
       setLoading(true);
       setError('');
 
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/users', {
-        method: 'GET',
-        headers,
-      });
+      const currentUser = auth.currentUser;
 
-      const data = (await response.json().catch(() => null)) as
-        | { users?: UserRow[]; error?: string }
-        | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to load users.');
+      if (!currentUser) {
+        setError('Your session expired. Please sign in again.');
         return;
       }
 
-      setRows(data?.users ?? []);
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch('/api/pets', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | { pets?: PetRow[]; error?: string }
+        | null;
+
+      if (!response.ok) {
+        setError(data?.error || 'Failed to load pets.');
+        return;
+      }
+
+      setRows(data?.pets ?? []);
     } catch (loadError) {
       console.error(loadError);
-      setError('Failed to load users.');
+      setError('Failed to load pets.');
     } finally {
       setLoading(false);
     }
   });
 
   useEffect(() => {
-    void loadUsers();
+    void loadPets();
   }, []);
 
   const filteredRows = useMemo(() => {
@@ -121,20 +118,13 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
     const searched = !normalizedSearch
       ? rows
       : rows.filter((row) =>
-          [row.name, row.email, row.contact, row.address].some((value) =>
+          [row.name, row.type, row.breed, row.owner, row.address].some((value) =>
             value.toLowerCase().includes(normalizedSearch)
           )
         );
 
     return [...searched].sort((left, right) => {
-      const leftValue = left[sortKey];
-      const rightValue = right[sortKey];
-
-      const comparison =
-        typeof leftValue === 'number' && typeof rightValue === 'number'
-          ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue));
-
+      const comparison = left[sortKey].localeCompare(right[sortKey]);
       return sortOrder === 'asc' ? comparison : -comparison;
     });
   }, [rows, search, sortKey, sortOrder]);
@@ -154,14 +144,14 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
     setSortOrder('asc');
   };
 
-  const handleDeleteUser = (user: UserRow) => {
+  const handleDeletePet = (pet: PetRow) => {
     if (!canDelete) {
       return;
     }
-    setDeleteTarget(user);
+    setDeleteTarget(pet);
   };
 
-  const confirmDeleteUser = () => {
+  const confirmDeletePet = () => {
     if (!deleteTarget) {
       return;
     }
@@ -170,16 +160,26 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
         setMessage('');
         setError('');
 
-        const headers = await getAuthHeaders();
-        const response = await fetch(`/api/users/${deleteTarget.id}`, {
+        const currentUser = auth.currentUser;
+
+        if (!currentUser) {
+          setError('Your session expired. Please sign in again.');
+          return;
+        }
+
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch(`/api/pets/${deleteTarget.id}`, {
           method: 'DELETE',
-          headers,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
         });
 
         const data = (await response.json().catch(() => null)) as { error?: string } | null;
 
         if (!response.ok) {
-          setError(data?.error || 'Failed to delete user.');
+          setError(data?.error || 'Failed to delete pet.');
           return;
         }
 
@@ -188,7 +188,7 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
         setDeleteTarget(null);
       } catch (deleteError) {
         console.error(deleteError);
-        setError('Failed to delete user.');
+        setError('Failed to delete pet.');
       }
     });
   };
@@ -212,10 +212,10 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
       >
         <Box>
           <Typography variant="h6" fontWeight={700} color="text.primary">
-            User Directory
+            Pet Directory
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Monitor registered mobile users, review their profiles, and inspect the pets linked to each account.
+            Review registered pets, their owner details, and their basic profile information from the mobile app.
           </Typography>
         </Box>
 
@@ -225,7 +225,7 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
             setSearch(event.target.value);
             setPage(0);
           }}
-          placeholder="Search name, email, contact, or address"
+          placeholder="Search name, type, breed, owner, or address"
           size="small"
           sx={{ minWidth: { xs: '100%', md: 300 } }}
           InputProps={{
@@ -251,14 +251,13 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
       ) : null}
 
       <TableContainer sx={{ ...tableContainerSx, maxHeight: 520 }}>
-        <Table stickyHeader size="small" aria-label="users table">
+        <Table stickyHeader size="small" aria-label="pets table">
           <TableHead>
             <TableRow>
               {headCells.map((cell) => (
                 <TableCell
                   key={cell.id}
                   sortDirection={sortKey === cell.id ? sortOrder : false}
-                  align={cell.numeric ? 'right' : 'left'}
                   sx={{ bgcolor: 'background.paper', fontWeight: 700, py: 1.25 }}
                 >
                   <TableSortLabel
@@ -283,7 +282,7 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
                   <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center" py={5}>
                     <CircularProgress size={20} />
                     <Typography variant="body2" color="text.secondary">
-                      Loading users...
+                      Loading pets...
                     </Typography>
                   </Stack>
                 </TableCell>
@@ -295,10 +294,10 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
                 <TableCell colSpan={5}>
                   <Box py={5} textAlign="center">
                     <Typography variant="subtitle1" fontWeight={700}>
-                      No users found
+                      No pets found
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Try adjusting your search or check whether user data already exists in Firebase.
+                      Try adjusting your search or check whether pet data already exists in Firebase.
                     </Typography>
                   </Box>
                 </TableCell>
@@ -312,37 +311,32 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
                       <Stack direction="row" spacing={1.25} alignItems="center">
                         <Box
                           component="img"
-                          src={row.profilePic}
+                          src={row.image}
                           alt={row.name}
                           sx={{
                             width: 36,
                             height: 36,
-                            borderRadius: '50%',
+                            borderRadius: 2,
                             objectFit: 'cover',
                             border: '1px solid',
                             borderColor: 'grey.200',
                           }}
                         />
-                        <Box>
-                          <Typography variant="body2" fontWeight={700} lineHeight={1.25}>
-                            {row.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {row.address}
-                          </Typography>
-                        </Box>
+                        <Typography variant="body2" fontWeight={700} lineHeight={1.25}>
+                          {row.name}
+                        </Typography>
                       </Stack>
                     </TableCell>
-                    <TableCell sx={{ py: 1.25 }}>{row.email}</TableCell>
-                    <TableCell sx={{ py: 1.25 }}>{row.contact}</TableCell>
-                    <TableCell sx={{ py: 1.25 }} align="right">{row.petsCount}</TableCell>
+                    <TableCell sx={{ py: 1.25 }}>{row.type}</TableCell>
+                    <TableCell sx={{ py: 1.25 }}>{row.breed}</TableCell>
+                    <TableCell sx={{ py: 1.25 }}>{row.owner}</TableCell>
                     <TableCell sx={{ py: 1.25 }}>
                       <Stack direction="row" spacing={0.75}>
                         <Button
                           size="small"
                           variant="outlined"
                           component={Link}
-                          href={`/users/${row.id}`}
+                          href={`/pets/${row.id}`}
                           startIcon={<VisibilityRoundedIcon fontSize="small" />}
                           sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
                         >
@@ -353,7 +347,7 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
                             size="small"
                             color="error"
                             variant="outlined"
-                            onClick={() => handleDeleteUser(row)}
+                            onClick={() => handleDeletePet(row)}
                             startIcon={<DeleteOutlineIcon fontSize="small" />}
                             disabled={isPending}
                             sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
@@ -394,16 +388,16 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
 
       <ConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Delete user record?"
+        title="Delete pet record?"
         description={
           deleteTarget
-            ? `Delete ${deleteTarget.name}? This removes the user record from the database.`
+            ? `Delete ${deleteTarget.name}? This removes the pet record from the database.`
             : ''
         }
-        confirmLabel="Delete user"
+        confirmLabel="Delete pet"
         loading={isPending}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDeleteUser}
+        onConfirm={confirmDeletePet}
       />
     </Paper>
   );

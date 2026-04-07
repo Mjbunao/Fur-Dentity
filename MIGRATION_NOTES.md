@@ -99,8 +99,21 @@ Completed:
 - Realtime Database rules confirmed must allow authenticated users to read their own `admins/{uid}` record.
 - Super-admin-only system-admin account creation feature implemented.
 - Forced password-change flow implemented for newly created `system_admin` accounts.
-- Users page migrated from the legacy project into a new MUI-based table flow with search, sticky headers, sorting, pagination, user details dialog, and super-admin-only delete action.
+- Users page migrated from the legacy project into a new MUI-based table flow with search, sticky headers, sorting, pagination, nested details page, and super-admin-only delete action.
 - Protected users API routes added for listing users, loading user details with pets, and deleting users through server-verified requests.
+- Pets page migrated into the Next.js dashboard with a matching MUI inventory table, nested details page, and super-admin-only delete action.
+- `Users` sidebar route converted into an expandable parent item with nested `User Directory` and `System Admin` links.
+- `System Admin` management page added with a searchable, sortable, paginated MUI table, create-account modal, status toggle, delete action, and immediate refresh after account creation.
+- Session revalidation route added so deactivated/deleted admins lose dashboard access on the next validation cycle.
+- Shared MUI confirmation dialog added for delete actions across users, pets, and system admins.
+- UI standards established and applied across current pages:
+  - Montserrat as the main font
+  - primary/warning theme colors as the project palette
+  - icon + label on action buttons by default
+  - tighter 10px button radius
+  - reduced table/card radius
+  - matching dialog/modal radius
+  - small MUI text fields as the standard input style
 
 In progress:
 
@@ -148,3 +161,26 @@ Next:
 - Continue migrating dashboard features from the legacy project one feature at a time.
 - Mark each new feature as shared or `super_admin` only.
 - Test the new users page in the browser and verify Realtime Database rules allow the protected server routes to read `users` and `pets` and delete `users` when invoked by `super_admin`.
+
+### 2026-04-07
+
+Done:
+
+- Migrated the pets inventory and pet details flow into the Next.js dashboard.
+- Reworked user and pet details from modal-style viewing into nested pages under the dashboard shell.
+- Added nested `Users` navigation in the sidebar with role-aware visibility/locking behavior.
+- Added a dedicated `System Admin` management section with list, create, activate/deactivate, and delete flows.
+- Added role-aware session revalidation so deactivated or removed admins lose dashboard access on the next validation check.
+- Standardized current UI surfaces around the approved design system:
+  - Montserrat
+  - primary/warning color theme
+  - icon + label action buttons
+  - tighter button, table, and dialog radii
+  - compact MUI table layout and small text fields
+- Replaced browser delete confirms with a shared Material UI confirmation dialog.
+
+Next:
+
+- Continue migrating the next legacy dashboard feature page-by-page.
+- Keep applying the approved design system defaults to new pages and forms.
+- Optionally clean the remaining shell warning by removing the unused `colors` import from `DashboardShell.tsx`.

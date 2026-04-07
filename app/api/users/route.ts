@@ -87,7 +87,7 @@ export async function GET(request: Request) {
           email: user.email || 'No email',
           contact: user.contactNumber || 'No contact',
           address: user.address?.fullAddress || 'No address',
-          profilePic: user.profilePic || '/Fur-Dentity/Profile.webp',
+          profilePic: user.profilePic || '/Profile.webp',
           petsCount: petCountByOwner.get(normalizedName) ?? 0,
         };
       })
