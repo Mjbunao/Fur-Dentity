@@ -43,7 +43,7 @@ const headCells: Array<{ id: SortKey; label: string; numeric?: boolean }> = [
   { id: 'name', label: 'Name' },
   { id: 'email', label: 'Email Address' },
   { id: 'contact', label: 'Contact' },
-  { id: 'petsCount', label: 'Registered Pets', numeric: true },
+  { id: 'petsCount', label: 'Pets', numeric: true },
 ];
 
 const tableContainerSx = {

@@ -106,6 +106,8 @@ Completed:
 - `System Admin` management page added with a searchable, sortable, paginated MUI table, create-account modal, status toggle, delete action, and immediate refresh after account creation.
 - Session revalidation route added so deactivated/deleted admins lose dashboard access on the next validation cycle.
 - Shared MUI confirmation dialog added for delete actions across users, pets, and system admins.
+- Donation page migrated into the Next.js dashboard with a shared inventory for both admin roles, role-aware delete flow, dedicated details page, create/edit dialog, and super-admin review table for delete requests.
+- Donation delete requests now persist request status on the donation record so refreshes do not allow duplicate requests, and resolved request records are removed from Realtime Database.
 - UI standards established and applied across current pages:
   - Montserrat as the main font
   - primary/warning theme colors as the project palette
@@ -183,4 +185,22 @@ Next:
 
 - Continue migrating the next legacy dashboard feature page-by-page.
 - Keep applying the approved design system defaults to new pages and forms.
+- Optionally clean the remaining shell warning by removing the unused `colors` import from `DashboardShell.tsx`.
+
+### 2026-04-08
+
+Done:
+
+- Migrated the legacy donation feature into the Next.js dashboard with server-backed routes and the approved shared/super-admin delete workflow.
+- Added donation create/edit flow, dedicated donation details page, and a super-admin delete-request review table.
+- Updated donation filtering so the table uses a date picker-style month/year field instead of the earlier combined dropdown approach.
+- Formatted donation delete-request `Requested At` values as `yyyy-mm-dd`.
+- Styled donation actions to follow the approved project UI rules, including warning-colored edit buttons and red delete/request-delete buttons.
+- Fixed donation request persistence so a system admin cannot submit duplicate delete requests after refreshing the page.
+- Updated the donation delete-request resolution flow so resolved request records are removed from Realtime Database instead of being left behind.
+
+Next:
+
+- Continue migrating the next legacy dashboard feature page-by-page.
+- Keep donation/server-side patterns consistent for the remaining features.
 - Optionally clean the remaining shell warning by removing the unused `colors` import from `DashboardShell.tsx`.
