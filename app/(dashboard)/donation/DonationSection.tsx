@@ -25,6 +25,7 @@ import { auth } from '@/lib/firebase';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import {
   AddRoundedIcon,
+  CloseRoundedIcon,
   DeleteOutlineIcon,
   EditRoundedIcon,
   RequestPageRoundedIcon,
@@ -75,6 +76,7 @@ export default function DonationSection({
   const [selectedDonation, setSelectedDonation] = useState<DonationRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DonationRow | null>(null);
   const [requestDeleteTarget, setRequestDeleteTarget] = useState<DonationRow | null>(null);
+  const [cancelRequestTarget, setCancelRequestTarget] = useState<DonationRow | null>(null);
   const [reviewRequestTarget, setReviewRequestTarget] = useState<DonationDeleteRequestRow | null>(null);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
   const [saving, setSaving] = useState(false);
@@ -363,6 +365,44 @@ export default function DonationSection({
     }
   };
 
+  const cancelDeleteRequest = async () => {
+    if (!cancelRequestTarget) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+      setMessage('');
+
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/donations/delete-requests', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({ donationId: cancelRequestTarget.id }),
+      });
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        setError(data?.error || 'Failed to cancel delete request.');
+        return;
+      }
+
+      setRows((current) =>
+        current.map((row) =>
+          row.id === cancelRequestTarget.id ? { ...row, requestStatus: null } : row
+        )
+      );
+      setMessage(`Delete request canceled for ${cancelRequestTarget.name}.`);
+      setCancelRequestTarget(null);
+    } catch (cancelError) {
+      console.error(cancelError);
+      setError('Failed to cancel delete request.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleReviewRequest = async () => {
     if (!reviewRequestTarget) {
       return;
@@ -591,12 +631,21 @@ export default function DonationSection({
                               size="small"
                               color="error"
                               variant="outlined"
-                              startIcon={<RequestPageRoundedIcon fontSize="small" />}
+                              startIcon={
+                                row.requestStatus === 'pending' ? (
+                                  <CloseRoundedIcon fontSize="small" />
+                                ) : (
+                                  <RequestPageRoundedIcon fontSize="small" />
+                                )
+                              }
                               sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                              disabled={row.requestStatus === 'pending'}
-                              onClick={() => setRequestDeleteTarget(row)}
+                              onClick={() =>
+                                row.requestStatus === 'pending'
+                                  ? setCancelRequestTarget(row)
+                                  : setRequestDeleteTarget(row)
+                              }
                             >
-                              {row.requestStatus === 'pending' ? 'Requested' : 'Request Delete'}
+                              {row.requestStatus === 'pending' ? 'Cancel Request' : 'Request Delete'}
                             </Button>
                           )}
                         </Stack>
@@ -679,6 +728,18 @@ export default function DonationSection({
         loading={saving}
         onClose={() => setRequestDeleteTarget(null)}
         onConfirm={() => void submitDeleteRequest()}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!cancelRequestTarget}
+        title="Cancel delete request?"
+        description={cancelRequestTarget ? `Cancel the pending delete request for ${cancelRequestTarget.name}'s donation?` : ''}
+        confirmLabel="Cancel request"
+        confirmColor="warning"
+        confirmIcon="close"
+        loading={saving}
+        onClose={() => setCancelRequestTarget(null)}
+        onConfirm={() => void cancelDeleteRequest()}
       />
 
       <ConfirmDeleteDialog

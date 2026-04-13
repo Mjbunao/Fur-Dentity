@@ -108,6 +108,9 @@ Completed:
 - Shared MUI confirmation dialog added for delete actions across users, pets, and system admins.
 - Donation page migrated into the Next.js dashboard with a shared inventory for both admin roles, role-aware delete flow, dedicated details page, create/edit dialog, and super-admin review table for delete requests.
 - Donation delete requests now persist request status on the donation record so refreshes do not allow duplicate requests, and resolved request records are removed from Realtime Database.
+- Adoption page migration started with shelter/adopted pet tables, add/edit pet modal, breed dropdowns from Firebase catalogs, pet details page, adoption request review, and role-aware delete-request workflow.
+- Donation and adoption delete-request review tables now support sorting.
+- System-admin pending delete requests can now be canceled instead of leaving the request button disabled.
 - UI standards established and applied across current pages:
   - Montserrat as the main font
   - primary/warning theme colors as the project palette
@@ -203,4 +206,28 @@ Next:
 
 - Continue migrating the next legacy dashboard feature page-by-page.
 - Keep donation/server-side patterns consistent for the remaining features.
+- Optionally clean the remaining shell warning by removing the unused `colors` import from `DashboardShell.tsx`.
+
+### 2026-04-13
+
+Done:
+
+- Migrated the legacy adoption feature into the Next.js dashboard with a server-backed adoption directory.
+- Added shelter/adopted tabs, searchable/sortable/paginated MUI table layout, add/edit pet dialog, and adoption details page.
+- Added breed dropdown support for adoption pet creation/editing using Firebase breed catalogs.
+- Added adoption request viewing on the pet details page with accept/reject actions based on the legacy request data shape.
+- Added adoption delete-request workflow matching donations:
+  - `system_admin` can request deletion.
+  - `super_admin` reviews and approves/rejects the request.
+  - resolved request records are removed from Realtime Database.
+- Added view links and `yyyy-mm-dd HH:mm` timestamp formatting to donation/adoption delete-request review tables.
+- Added sorting to both donation and adoption delete-request review tables.
+- Changed pending delete-request buttons for donation/adoption from disabled `Requested` buttons into active `Cancel Request` buttons.
+- Added server-side cancel endpoints that clear `requestStatus`, `deleteRequestId`, and `deleteRequestByUid` from the target record and remove the linked pending request node.
+
+Next:
+
+- Runtime-test the adoption cancel-request flow with a freshly created request, because older pending requests may not have the new `deleteRequestId` metadata.
+- Continue migrating the next legacy dashboard feature page-by-page.
+- Keep using the established MUI design rules: Montserrat, theme primary/warning colors, compact tables, 10px action button radius, reduced modal/table radius, and icon + label on buttons.
 - Optionally clean the remaining shell warning by removing the unused `colors` import from `DashboardShell.tsx`.

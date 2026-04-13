@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import {
   CloseRoundedIcon,
+  CheckCircleRoundedIcon,
   DeleteOutlineIcon,
   WarningAmberRoundedIcon,
 } from '@/components/icons';
@@ -20,6 +21,8 @@ type ConfirmDeleteDialogProps = {
   title: string;
   description: string;
   confirmLabel?: string;
+  confirmColor?: 'primary' | 'success' | 'error' | 'warning';
+  confirmIcon?: 'check' | 'close' | 'delete';
   loading?: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -30,10 +33,19 @@ export default function ConfirmDeleteDialog({
   title,
   description,
   confirmLabel = 'Delete',
+  confirmColor = 'error',
+  confirmIcon = 'delete',
   loading = false,
   onClose,
   onConfirm,
 }: ConfirmDeleteDialogProps) {
+  const ConfirmIcon =
+    confirmIcon === 'check'
+      ? CheckCircleRoundedIcon
+      : confirmIcon === 'close'
+        ? CloseRoundedIcon
+        : DeleteOutlineIcon;
+
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ px: 3, pt: 2.5, pb: 1 }}>
@@ -56,11 +68,11 @@ export default function ConfirmDeleteDialog({
           Cancel
         </Button>
         <Button
-          color="error"
+          color={confirmColor}
           variant="contained"
           onClick={onConfirm}
           disabled={loading}
-          startIcon={<DeleteOutlineIcon sx={{ fontSize: 18 }} />}
+          startIcon={<ConfirmIcon sx={{ fontSize: 18 }} />}
         >
           {confirmLabel}
         </Button>

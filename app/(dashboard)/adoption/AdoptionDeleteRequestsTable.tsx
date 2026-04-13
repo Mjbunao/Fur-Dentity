@@ -18,60 +18,37 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
-import type { DonationDeleteRequestRow } from './types';
 import { DeleteOutlineIcon, DoNotDisturbOnRoundedIcon, VisibilityRoundedIcon } from '@/components/icons';
+import type { AdoptionDeleteRequestRow } from './types';
 
-const formatRequestedAt = (value: string) => {
-  if (!value) {
-    return 'Unknown';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  const year = parsed.getFullYear();
-  const month = String(parsed.getMonth() + 1).padStart(2, '0');
-  const day = String(parsed.getDate()).padStart(2, '0');
-  const hours = String(parsed.getHours()).padStart(2, '0');
-  const minutes = String(parsed.getMinutes()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-};
-
-type SortKey = 'donationName' | 'requestedByName' | 'createdAt';
+type SortKey = 'petName' | 'requestedByName' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
 const headCells: Array<{ id: SortKey; label: string }> = [
-  { id: 'donationName', label: 'Donation' },
+  { id: 'petName', label: 'Pet' },
   { id: 'requestedByName', label: 'Requested By' },
   { id: 'createdAt', label: 'Requested At' },
 ];
 
-export default function DonationDeleteRequestsTable({
+export default function AdoptionDeleteRequestsTable({
   rows,
   loading,
   error,
   onApprove,
   onReject,
 }: {
-  rows: DonationDeleteRequestRow[];
+  rows: AdoptionDeleteRequestRow[];
   loading: boolean;
   error: string;
-  onApprove: (request: DonationDeleteRequestRow) => void;
-  onReject: (request: DonationDeleteRequestRow) => void;
+  onApprove: (request: AdoptionDeleteRequestRow) => void;
+  onReject: (request: AdoptionDeleteRequestRow) => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const sortedRows = useMemo(() => {
     return [...rows].sort((left, right) => {
-      const comparison =
-        sortKey === 'createdAt'
-          ? new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
-          : String(left[sortKey]).localeCompare(String(right[sortKey]));
-
+      const comparison = String(left[sortKey]).localeCompare(String(right[sortKey]));
       return sortOrder === 'asc' ? comparison : -comparison;
     });
   }, [rows, sortKey, sortOrder]);
@@ -98,10 +75,10 @@ export default function DonationDeleteRequestsTable({
     >
       <Box sx={{ mb: 2.25 }}>
         <Typography variant="h6" fontWeight={700}>
-          Donation Delete Requests
+          Adoption Delete Requests
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-          Review pending delete requests submitted by system admins before removing donation records.
+          Review pending adoption delete requests submitted by system admins.
         </Typography>
       </Box>
 
@@ -151,7 +128,7 @@ export default function DonationDeleteRequestsTable({
                       No pending requests
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Delete requests from system admins will appear here.
+                      Adoption delete requests from system admins will appear here.
                     </Typography>
                   </Box>
                 </TableCell>
@@ -162,14 +139,12 @@ export default function DonationDeleteRequestsTable({
               ? sortedRows.map((row) => (
                   <TableRow hover key={row.id}>
                     <TableCell sx={{ py: 1.25 }}>
-                      <Stack spacing={0.25}>
-                        <Typography variant="body2" fontWeight={700}>
-                          {row.donationName}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Request ID: {row.id}
-                        </Typography>
-                      </Stack>
+                      <Typography variant="body2" fontWeight={700}>
+                        {row.petName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                        {row.petStatus}
+                      </Typography>
                     </TableCell>
                     <TableCell sx={{ py: 1.25 }}>
                       <Typography variant="body2">{row.requestedByName}</Typography>
@@ -177,14 +152,14 @@ export default function DonationDeleteRequestsTable({
                         {row.requestedByEmail}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ py: 1.25 }}>{formatRequestedAt(row.createdAt)}</TableCell>
+                    <TableCell sx={{ py: 1.25 }}>{row.createdAt}</TableCell>
                     <TableCell sx={{ py: 1.25 }}>
                       <Stack direction="row" spacing={0.75}>
                         <Button
                           size="small"
                           variant="outlined"
                           component={Link}
-                          href={`/donation/${row.donationId}`}
+                          href={`/adoption/${row.petId}?status=${row.petStatus}`}
                           startIcon={<VisibilityRoundedIcon fontSize="small" />}
                           sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
                         >

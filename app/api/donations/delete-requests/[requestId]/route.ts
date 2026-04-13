@@ -79,11 +79,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
     } else {
       const resetDonationStatusResponse = await fetch(
-        `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}/requestStatus.json?auth=${encodeURIComponent(idToken)}`,
+        `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}.json?auth=${encodeURIComponent(idToken)}`,
         {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify('rejected'),
+          body: JSON.stringify({
+            requestStatus: 'rejected',
+            deleteRequestId: null,
+            deleteRequestByUid: null,
+          }),
           cache: 'no-store',
         }
       );
