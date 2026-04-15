@@ -173,6 +173,7 @@ export default function CreateSystemAdminDialog({
             <Stack spacing={2.25}>
               <TextField
                 label="Full name"
+                required
                 placeholder="System admin name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -183,6 +184,7 @@ export default function CreateSystemAdminDialog({
 
               <TextField
                 label="Email"
+                required
                 placeholder="admin@example.com"
                 type="email"
                 value={email}
@@ -194,6 +196,7 @@ export default function CreateSystemAdminDialog({
 
               <TextField
                 label="Temporary password"
+                required
                 placeholder="At least 6 characters"
                 type="text"
                 value={temporaryPassword}

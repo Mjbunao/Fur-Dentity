@@ -231,3 +231,85 @@ Next:
 - Continue migrating the next legacy dashboard feature page-by-page.
 - Keep using the established MUI design rules: Montserrat, theme primary/warning colors, compact tables, 10px action button radius, reduced modal/table radius, and icon + label on buttons.
 - Optionally clean the remaining shell warning by removing the unused `colors` import from `DashboardShell.tsx`.
+
+### 2026-04-14
+
+Done:
+
+- Continued stabilizing the adoption feature after the first migration pass.
+- Fixed adoption request loading/counting around the legacy request node shape:
+  - valid request records are read from `catalogs/petShelterList/{petId}/request/{requestId}/userID`.
+  - placeholder/invalid child nodes such as raw `userID` keys are filtered out and should not count as real requests.
+- Kept adoption request accept/reject behavior inside the adoption details page.
+- Added/kept donation and adoption delete-request detail/view support with readable timestamps.
+- Updated donation and adoption delete-request timestamps to include both date and time.
+- Added sorting to adoption delete-request review tables.
+- Migrated the reports/ticketing feature into the dashboard with server-backed APIs and a report details page.
+- Added reports delete behavior following the donation/adoption pattern:
+  - `system_admin` requests deletion.
+  - `super_admin` reviews and approves/rejects.
+  - direct super-admin deletion remains available.
+- Refined report table layout and labels:
+  - report type shows `Missing` or `Found`.
+  - registration status is displayed as supporting subtext.
+  - action column spacing was tightened.
+  - report details heading capitalization was fixed.
+- Discussed the activity log/timeline feature and agreed to log admin actions first before mobile-created events.
+- Decided activity logs should include actor, action, subject, target, timestamp, and metadata.
+- Decided activity logs are audit records and should not have edit/delete UI.
+
+Next:
+
+- Implement the admin activity log system server-side.
+- Add a super-admin-only Activity Logs page.
+- Continue verifying deletion workflows remove or update the matching Firebase records instead of only hiding UI rows.
+
+### 2026-04-15
+
+Done:
+
+- Added server-side activity logging for admin actions across the migrated dashboard:
+  - admin login/logout
+  - user deletion
+  - pet deletion
+  - system-admin create/status/delete/password-change actions
+  - donation create/update/delete/delete-request actions
+  - adoption create/update/delete/delete-request actions
+  - adoption request accept/reject actions
+  - report status/delete/delete-request actions
+- Fixed duplicate login activity logs by making the login page create the secure admin session from one guarded `onAuthStateChanged` path.
+- Added an `activityLogs` dashboard section for `super_admin` only, with a searchable, paginated, role-filtered table.
+- Added clickable activity log rows and a dedicated activity log details page that presents the audit record as a readable sentence instead of raw label-by-label data.
+- Kept activity logs as audit-only records with no edit/delete UI.
+- Standardized required field indicators on active forms and enforced numeric-only input for number-like fields:
+  - donation amount
+  - donation contact number
+  - adoption pet age
+- Tightened delete consistency rules:
+  - direct super-admin deletes for donation/adoption/reports also clean up linked pending delete-request nodes.
+  - UI rows are only removed after server/database success.
+- Refactored main data tables toward the new browse-only pattern:
+  - Users, Pets, Donation, Adoption, Reports, and Activity Logs now use clickable rows to open details pages.
+  - Main record table action columns were removed where details pages now own the actions.
+  - Details pages now hold edit/delete/request-delete/cancel-request actions for Donation and Adoption.
+  - Reports details page remains the owner of status update/delete/request-delete/cancel-request.
+- Intentionally kept action buttons inside action/review tables:
+  - System Admin table remains an action table.
+  - Donation/Adoption/Report delete-request review tables keep approve/reject actions.
+
+Current UI/UX rule:
+
+- Main record tables are for browsing/searching/sorting only.
+- Clicking a main table row opens the details page.
+- Record-changing actions belong on the details page.
+- Action queues and management tables can keep inline buttons when that is the main purpose of the table.
+
+Next:
+
+- Browser-test details-page actions after the row-click refactor:
+  - donation edit/delete/request/cancel
+  - adoption edit/delete/request/cancel
+  - report delete/request/cancel/status update
+  - users/pets details-page delete
+- Continue migrating remaining legacy dashboard sections feature-by-feature.
+- Keep all privileged mutations server-verified and activity-logged when they change important records.

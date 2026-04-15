@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, onAuthStateChanged, signInWithEmailAndPassword } from '@/lib/firebase';
 import {
@@ -26,31 +26,81 @@ export default function LoginPage() {
   const [passwordError, setPasswordError] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+  const sessionCreatedRef = useRef(false);
+  const sessionRequestRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const createSecureSession = async (idToken: string) => {
+      if (sessionCreatedRef.current) {
+        return;
+      }
+
+      if (sessionRequestRef.current) {
+        return sessionRequestRef.current;
+      }
+
+      sessionRequestRef.current = (async () => {
+        const response = await fetch('/api/session/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          let data: { error?: string } | null = null;
+
+          if (responseText) {
+            try {
+              data = JSON.parse(responseText) as { error?: string };
+            } catch {
+              data = { error: responseText };
+            }
+          }
+
+          setFormError(
+            data?.error ||
+              `Login succeeded, but the secure admin session could not be created. Server returned ${response.status}.`
+          );
+          setLoading(false);
+          return;
+        }
+
+        sessionCreatedRef.current = true;
+        const data = (await response.json().catch(() => null)) as
+          | { mustChangePassword?: boolean }
+          | null;
+
+        setFormSuccess('Login successful. Redirecting...');
+        router.replace(data?.mustChangePassword ? '/change-password' : '/dashboard');
+      })().finally(() => {
+        sessionRequestRef.current = null;
+      });
+
+      return sessionRequestRef.current;
+    };
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         return;
       }
 
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/session/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { mustChangePassword?: boolean }
-          | null;
-        router.replace(data?.mustChangePassword ? '/change-password' : '/dashboard');
-      }
+      await createSecureSession(idToken);
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [router]);
 
   const resetErrors = () => {
@@ -88,36 +138,16 @@ export default function LoginPage() {
       setFormError('');
       setFormSuccess('');
 
-      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const idToken = await credential.user.getIdToken();
-      const response = await fetch('/api/session/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        setFormError(
-          data?.error || 'Login succeeded, but the secure admin session could not be created.'
-        );
-        return;
-      }
-
-      const data = (await response.json().catch(() => null)) as
-        | { mustChangePassword?: boolean }
-        | null;
-
-      setFormSuccess('Login successful. Redirecting...');
-      router.push(data?.mustChangePassword ? '/change-password' : '/dashboard');
+      await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (err) {
       console.error(err);
       setPasswordError('Invalid email or password');
       setFormError('Login failed. Please check your credentials and try again.');
-    } finally {
       setLoading(false);
+    } finally {
+      if (!sessionRequestRef.current && !sessionCreatedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -216,6 +246,7 @@ export default function LoginPage() {
 
         <TextField
           label="Email"
+          required
           variant="outlined"
           size="small"
           fullWidth
@@ -232,6 +263,7 @@ export default function LoginPage() {
 
         <TextField
           label="Password"
+          required
           variant="outlined"
           margin="dense"
           size="small"

@@ -1,6 +1,7 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type RouteContext = {
   params: Promise<{
@@ -25,6 +26,9 @@ type LegacyPetRecord = {
     contactNumber?: string;
   };
 };
+
+const getPetName = (pet: LegacyPetRecord | null | undefined) => pet?.petDetails?.petName || 'Unknown pet';
+const getOwnerName = (pet: LegacyPetRecord | null | undefined) => pet?.ownerDetails?.fullName || 'Unknown owner';
 
 const getIdTokenFromRequest = (request: Request) => {
   const authorization = request.headers.get('authorization');
@@ -115,6 +119,20 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
 
     const { petId } = await context.params;
+    const petResponse = await fetch(
+      `${firebaseConfig.databaseURL}/pets/${encodeURIComponent(petId)}.json?auth=${encodeURIComponent(idToken)}`,
+      { cache: 'no-store' }
+    );
+
+    if (!petResponse.ok) {
+      return Response.json({ error: 'Failed to load pet before deletion.' }, { status: petResponse.status });
+    }
+
+    const petRecord = (await petResponse.json()) as LegacyPetRecord | null;
+    if (!petRecord) {
+      return Response.json({ error: 'Pet not found.' }, { status: 404 });
+    }
+
     const response = await fetch(
       `${firebaseConfig.databaseURL}/pets/${encodeURIComponent(petId)}.json?auth=${encodeURIComponent(idToken)}`,
       {
@@ -126,6 +144,31 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!response.ok) {
       return Response.json({ error: 'Failed to delete pet.' }, { status: response.status });
     }
+
+    await createActivityLog({
+      session,
+      idToken,
+      log: {
+        action: 'deleted_pet',
+        module: 'pets',
+        subject: {
+          type: 'user',
+          name: getOwnerName(petRecord),
+        },
+        target: {
+          type: 'pet',
+          id: petId,
+          name: getPetName(petRecord),
+        },
+        description: `${session.name || session.email} directly deleted ${getOwnerName(petRecord)}'s pet record for ${getPetName(petRecord)}.`,
+        metadata: {
+          petType: petRecord.petDetails?.petType,
+          breed: petRecord.petDetails?.breed,
+          ownerName: getOwnerName(petRecord),
+          contactNumber: petRecord.ownerDetails?.contactNumber,
+        },
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

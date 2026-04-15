@@ -7,6 +7,7 @@ import {
   requireVerifiedAdmin,
   type ShelterPetRecord,
 } from './utils';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type AdoptionPayload = {
   petName?: string;
@@ -108,6 +109,27 @@ export async function POST(request: Request) {
     if (!data.name) {
       return Response.json({ error: 'Adoption pet key was not created.' }, { status: 500 });
     }
+
+    await createActivityLog({
+      session: verified.session,
+      idToken: verified.idToken,
+      log: {
+        action: 'created_adoption_pet',
+        module: 'adoption',
+        target: {
+          type: 'adoption_pet',
+          id: data.name,
+          name: payload.petName || 'No Name',
+        },
+        description: `${verified.session.name || verified.session.email} added ${payload.petName || 'No Name'} to the adoption shelter list.`,
+        metadata: {
+          petName: payload.petName,
+          type: payload.type,
+          gender: payload.gender,
+          breed: payload.breed,
+        },
+      },
+    });
 
     return Response.json({ pet: normalizeShelterPet(data.name, payload) });
   } catch (error) {

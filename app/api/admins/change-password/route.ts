@@ -1,6 +1,7 @@
 import { createSession, requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 export async function POST(request: Request) {
   const session = await requireSession();
@@ -42,6 +43,33 @@ export async function POST(request: Request) {
       name: session.name,
       role: session.role,
       mustChangePassword: false,
+    });
+
+    await createActivityLog({
+      session: {
+        ...session,
+        mustChangePassword: false,
+      },
+      idToken,
+      log: {
+        action: 'changed_admin_password',
+        module: 'users',
+        subject: {
+          type: 'admin',
+          id: session.uid,
+          name: session.name || session.email,
+        },
+        target: {
+          type: 'admin_account',
+          id: session.uid,
+          name: session.name || session.email,
+        },
+        description: `${session.name || session.email} changed their admin password and completed first-login setup.`,
+        metadata: {
+          role: session.role,
+          mustChangePassword: false,
+        },
+      },
     });
 
     return Response.json({ ok: true });

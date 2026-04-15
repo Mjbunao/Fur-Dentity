@@ -3,6 +3,7 @@ import {
   verifyFirebaseIdToken,
 } from '@/lib/auth/firebase-server';
 import { createSession } from '@/lib/auth/session';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 export async function POST(request: Request) {
   try {
@@ -28,12 +29,39 @@ export async function POST(request: Request) {
       return Response.json({ error: 'This admin account is inactive.' }, { status: 403 });
     }
 
-    await createSession({
+    const sessionPayload = {
       uid: authUser.uid,
       email: adminProfile.email || authUser.email,
-      name: adminProfile.name,
       role: adminProfile.role,
       mustChangePassword: adminProfile.mustChangePassword === true,
+      ...(adminProfile.name ? { name: adminProfile.name } : {}),
+    };
+
+    await createSession(sessionPayload);
+
+    await createActivityLog({
+      session: sessionPayload,
+      idToken,
+      log: {
+        action: 'admin_logged_in',
+        module: 'auth',
+        subject: {
+          type: 'admin',
+          id: authUser.uid,
+          name: adminProfile.name || adminProfile.email || authUser.email,
+        },
+        target: {
+          type: 'admin_session',
+          id: authUser.uid,
+          name: adminProfile.name || adminProfile.email || authUser.email || 'Admin session',
+        },
+        description: `${adminProfile.name || adminProfile.email || authUser.email} logged in to the admin web.`,
+        metadata: {
+          email: adminProfile.email || authUser.email,
+          role: adminProfile.role,
+          mustChangePassword: adminProfile.mustChangePassword === true,
+        },
+      },
     });
 
     return Response.json({

@@ -24,3 +24,4 @@ export {default as PaymentsRoundedIcon} from '@mui/icons-material/PaymentsRounde
 export {default as RequestPageRoundedIcon} from '@mui/icons-material/RequestPageRounded';
 export {default as CheckCircleRoundedIcon} from '@mui/icons-material/CheckCircleRounded';
 export {default as DoNotDisturbOnRoundedIcon} from '@mui/icons-material/DoNotDisturbOnRounded';
+export {default as HistoryRoundedIcon} from '@mui/icons-material/HistoryRounded';

@@ -60,6 +60,14 @@ const defaultForm = (): DonationFormPayload => ({
   reference: '',
 });
 
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+const decimalNumber = (value: string) => {
+  const cleaned = value.replace(/[^\d.]/g, '');
+  const [whole, ...rest] = cleaned.split('.');
+  return rest.length > 0 ? `${whole}.${rest.join('')}` : whole;
+};
+
 export default function DonationFormDialog({
   open,
   mode,
@@ -90,6 +98,9 @@ export default function DonationFormDialog({
 
   const [form, setForm] = useState<DonationFormPayload>(initialForm);
   const [error, setError] = useState('');
+  const isEditMode = mode === 'edit';
+  const identityFieldDisabled = loading || isEditMode;
+  const donorDetailDisabled = loading || isEditMode || form.donorType === 'Registered User';
 
   const handleChange = <K extends keyof DonationFormPayload>(key: K, value: DonationFormPayload[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -143,7 +154,7 @@ export default function DonationFormDialog({
       <DialogContent sx={{ px: 3, py: 2.5 }}>
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
-            <FormControl size="small" fullWidth>
+            <FormControl size="small" fullWidth required>
               <InputLabel id="donor-type-label">Donor type</InputLabel>
               <Select
                 labelId="donor-type-label"
@@ -161,7 +172,7 @@ export default function DonationFormDialog({
                     address: donorType === 'Registered User' ? current.address : '',
                   }));
                 }}
-                disabled={loading}
+                disabled={identityFieldDisabled}
               >
                 <MenuItem value="Registered User">Registered User</MenuItem>
                 <MenuItem value="Unregistered User">Manual Entry</MenuItem>
@@ -169,7 +180,7 @@ export default function DonationFormDialog({
             </FormControl>
 
             {form.donorType === 'Registered User' ? (
-              <FormControl size="small" fullWidth>
+              <FormControl size="small" fullWidth required>
                 <InputLabel id="registered-user-label">Select user</InputLabel>
                 <Select
                   labelId="registered-user-label"
@@ -188,7 +199,7 @@ export default function DonationFormDialog({
                       address: user?.address || current.address,
                     }));
                   }}
-                  disabled={loading}
+                  disabled={identityFieldDisabled}
                 >
                   {users.map((user) => (
                     <MenuItem key={user.id} value={user.id}>
@@ -199,18 +210,18 @@ export default function DonationFormDialog({
               </FormControl>
             ) : null}
 
-            <TextField label="Full name" size="small" fullWidth value={form.name} onChange={(event) => handleChange('name', event.target.value)} disabled={loading || form.donorType === 'Registered User'} />
-            <TextField label="Email" size="small" fullWidth type="email" value={form.email} onChange={(event) => handleChange('email', event.target.value)} disabled={loading || form.donorType === 'Registered User'} />
+            <TextField label="Full name" required size="small" fullWidth value={form.name} onChange={(event) => handleChange('name', event.target.value)} disabled={donorDetailDisabled} />
+            <TextField label="Email" required size="small" fullWidth type="email" value={form.email} onChange={(event) => handleChange('email', event.target.value)} disabled={donorDetailDisabled} />
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Contact number" size="small" fullWidth value={form.contact} onChange={(event) => handleChange('contact', event.target.value)} disabled={loading || form.donorType === 'Registered User'} />
-              <TextField label="Date" size="small" fullWidth type="date" value={form.date} onChange={(event) => handleChange('date', event.target.value)} disabled={loading} slotProps={{ inputLabel: { shrink: true } }} />
+              <TextField label="Contact number" required size="small" fullWidth value={form.contact} onChange={(event) => handleChange('contact', onlyDigits(event.target.value))} disabled={donorDetailDisabled} inputMode="numeric" slotProps={{ htmlInput: { pattern: '[0-9]*' } }} />
+              <TextField label="Date" required size="small" fullWidth type="date" value={form.date} onChange={(event) => handleChange('date', event.target.value)} disabled={loading} slotProps={{ inputLabel: { shrink: true } }} />
             </Stack>
 
-            <TextField label="Address" size="small" fullWidth value={form.address} onChange={(event) => handleChange('address', event.target.value)} disabled={loading || form.donorType === 'Registered User'} />
+            <TextField label="Address" required size="small" fullWidth value={form.address} onChange={(event) => handleChange('address', event.target.value)} disabled={donorDetailDisabled} />
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <FormControl size="small" fullWidth>
+              <FormControl size="small" fullWidth required>
                 <InputLabel id="platform-label">Platform</InputLabel>
                 <Select labelId="platform-label" label="Platform" value={form.platform} onChange={(event) => handleChange('platform', event.target.value)} disabled={loading}>
                   <MenuItem value="Gcash">Gcash</MenuItem>
@@ -218,18 +229,23 @@ export default function DonationFormDialog({
                   <MenuItem value="Other">Other</MenuItem>
                 </Select>
               </FormControl>
-              <TextField label="Reference No." size="small" fullWidth value={form.reference} onChange={(event) => handleChange('reference', event.target.value)} disabled={loading} />
+              <TextField label="Reference No." required size="small" fullWidth value={form.reference} onChange={(event) => handleChange('reference', event.target.value)} disabled={loading} />
             </Stack>
 
             <TextField
               label="Amount"
+              required
               size="small"
               fullWidth
-              type="number"
+              type="text"
               value={form.amount || ''}
-              onChange={(event) => handleChange('amount', Number(event.target.value))}
+              onChange={(event) => handleChange('amount', Number(decimalNumber(event.target.value)))}
               disabled={loading}
+              inputMode="decimal"
               slotProps={{
+                htmlInput: {
+                  pattern: '[0-9]*[.]?[0-9]*',
+                },
                 input: {
                   startAdornment: <PaymentsRoundedIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 1 }} />,
                 },

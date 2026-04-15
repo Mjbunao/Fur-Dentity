@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import {
   Alert,
@@ -28,12 +28,7 @@ import { auth } from '@/lib/firebase';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import {
   AddRoundedIcon,
-  CloseRoundedIcon,
-  DeleteOutlineIcon,
-  EditRoundedIcon,
-  RequestPageRoundedIcon,
   SearchIcon,
-  VisibilityRoundedIcon,
 } from '@/components/icons';
 import AdoptionPetFormDialog from './AdoptionPetFormDialog';
 import AdoptionDeleteRequestsTable from './AdoptionDeleteRequestsTable';
@@ -64,6 +59,7 @@ const tableContainerSx = {
 };
 
 export default function AdoptionSection({ adminRole, adminUid, adminName, adminEmail }: AdoptionSectionProps) {
+  const router = useRouter();
   const [shelterRows, setShelterRows] = useState<AdoptionPetRow[]>([]);
   const [adoptedRows, setAdoptedRows] = useState<AdoptionPetRow[]>([]);
   const [requests, setRequests] = useState<AdoptionDeleteRequestRow[]>([]);
@@ -86,13 +82,12 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedPet, setSelectedPet] = useState<AdoptionPetRow | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<AdoptionPetRow | null>(null);
-  const [requestDeleteTarget, setRequestDeleteTarget] = useState<AdoptionPetRow | null>(null);
-  const [cancelRequestTarget, setCancelRequestTarget] = useState<AdoptionPetRow | null>(null);
   const [reviewRequestTarget, setReviewRequestTarget] = useState<AdoptionDeleteRequestRow | null>(null);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
 
-  const canDelete = adminRole === 'super_admin';
+  void adminUid;
+  void adminName;
+  void adminEmail;
   const rows = activeTab === 'shelter' ? shelterRows : adoptedRows;
 
   const getAuthHeaders = async () => {
@@ -225,12 +220,6 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
     setFormOpen(true);
   };
 
-  const openEditDialog = (pet: AdoptionPetRow) => {
-    setFormMode('edit');
-    setSelectedPet(pet);
-    setFormOpen(true);
-  };
-
   const handleSubmitPet = async (payload: AdoptionPetFormPayload) => {
     try {
       setSaving(true);
@@ -268,143 +257,6 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
     } catch (submitError) {
       console.error(submitError);
       setError('Failed to save adoption pet.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const confirmDeletePet = async () => {
-    if (!deleteTarget) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-      setMessage('');
-
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/adoptions/${deleteTarget.id}`, {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify({ status: deleteTarget.status }),
-      });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to delete adoption record.');
-        return;
-      }
-
-      if (deleteTarget.status === 'shelter') {
-        setShelterRows((current) => current.filter((row) => row.id !== deleteTarget.id));
-      } else {
-        setAdoptedRows((current) => current.filter((row) => row.id !== deleteTarget.id));
-      }
-
-      setMessage(`${deleteTarget.petName} was deleted successfully.`);
-      setDeleteTarget(null);
-    } catch (deleteError) {
-      console.error(deleteError);
-      setError('Failed to delete adoption record.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const submitDeleteRequest = async () => {
-    if (!requestDeleteTarget) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-      setMessage('');
-
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/adoptions/delete-requests', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          petId: requestDeleteTarget.id,
-          petName: requestDeleteTarget.petName,
-          petStatus: requestDeleteTarget.status,
-          requestedByUid: adminUid,
-          requestedByName: adminName || 'System Admin',
-          requestedByEmail: adminEmail,
-        }),
-      });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to submit adoption delete request.');
-        return;
-      }
-
-      const updateRows = (current: AdoptionPetRow[]) =>
-        current.map((row) =>
-          row.id === requestDeleteTarget.id ? { ...row, requestStatus: 'pending' as const } : row
-        );
-
-      if (requestDeleteTarget.status === 'shelter') {
-        setShelterRows(updateRows);
-      } else {
-        setAdoptedRows(updateRows);
-      }
-
-      setMessage(`Delete request submitted for ${requestDeleteTarget.petName}.`);
-      setRequestDeleteTarget(null);
-    } catch (requestError) {
-      console.error(requestError);
-      setError('Failed to submit adoption delete request.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const cancelDeleteRequest = async () => {
-    if (!cancelRequestTarget) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-      setMessage('');
-
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/adoptions/delete-requests', {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify({
-          petId: cancelRequestTarget.id,
-          petStatus: cancelRequestTarget.status,
-        }),
-      });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to cancel adoption delete request.');
-        return;
-      }
-
-      const resetRows = (current: AdoptionPetRow[]) =>
-        current.map((row) =>
-          row.id === cancelRequestTarget.id ? { ...row, requestStatus: null } : row
-        );
-
-      if (cancelRequestTarget.status === 'shelter') {
-        setShelterRows(resetRows);
-      } else {
-        setAdoptedRows(resetRows);
-      }
-
-      setMessage(`Delete request canceled for ${cancelRequestTarget.petName}.`);
-      setCancelRequestTarget(null);
-    } catch (cancelError) {
-      console.error(cancelError);
-      setError('Failed to cancel adoption delete request.');
     } finally {
       setSaving(false);
     }
@@ -554,15 +406,12 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
               <TableCell sx={{ bgcolor: 'background.paper', fontWeight: 700, py: 1.25 }}>
                 Status
               </TableCell>
-              <TableCell sx={{ bgcolor: 'background.paper', fontWeight: 700, py: 1.25 }}>
-                Actions
-              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={5}>
                   <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center" py={5}>
                     <CircularProgress size={20} />
                     <Typography variant="body2" color="text.secondary">
@@ -575,7 +424,7 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
 
             {!loading && paginatedRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={5}>
                   <Box py={5} textAlign="center">
                     <Typography variant="subtitle1" fontWeight={700}>
                       No adoption records found
@@ -590,7 +439,12 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
 
             {!loading
               ? paginatedRows.map((row) => (
-                  <TableRow hover key={`${row.status}-${row.id}`}>
+                  <TableRow
+                    hover
+                    key={`${row.status}-${row.id}`}
+                    onClick={() => router.push(`/adoption/${row.id}?status=${row.status}`)}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell sx={{ py: 1.25 }}>
                       <Stack direction="row" spacing={1.25} alignItems="center">
                         <Box
@@ -628,65 +482,6 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
                         color={row.status === 'shelter' ? 'warning' : 'success'}
                         variant="outlined"
                       />
-                    </TableCell>
-                    <TableCell sx={{ py: 1.25 }}>
-                      <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          component={Link}
-                          href={`/adoption/${row.id}?status=${row.status}`}
-                          startIcon={<VisibilityRoundedIcon fontSize="small" />}
-                          sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                        >
-                          View
-                        </Button>
-                        {row.status === 'shelter' ? (
-                          <Button
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            onClick={() => openEditDialog(row)}
-                            startIcon={<EditRoundedIcon fontSize="small" />}
-                            sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                          >
-                            Edit
-                          </Button>
-                        ) : null}
-                        {canDelete ? (
-                          <Button
-                            size="small"
-                            color="error"
-                            variant="outlined"
-                            onClick={() => setDeleteTarget(row)}
-                            startIcon={<DeleteOutlineIcon fontSize="small" />}
-                            sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                          >
-                            Delete
-                          </Button>
-                        ) : (
-                          <Button
-                            size="small"
-                            color="error"
-                            variant="outlined"
-                            onClick={() =>
-                              row.requestStatus === 'pending'
-                                ? setCancelRequestTarget(row)
-                                : setRequestDeleteTarget(row)
-                            }
-                            startIcon={
-                              row.requestStatus === 'pending' ? (
-                                <CloseRoundedIcon fontSize="small" />
-                              ) : (
-                                <RequestPageRoundedIcon fontSize="small" />
-                              )
-                            }
-                            sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                          >
-                            {row.requestStatus === 'pending' ? 'Cancel Request' : 'Request Delete'}
-                          </Button>
-                        )}
-                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))
@@ -730,46 +525,6 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
           setSelectedPet(null);
         }}
         onSubmit={handleSubmitPet}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!deleteTarget}
-        title="Delete adoption record?"
-        description={
-          deleteTarget
-            ? `Delete ${deleteTarget.petName}? This removes the ${deleteTarget.status === 'adopted' ? 'adopted' : 'shelter'} adoption record.`
-            : ''
-        }
-        confirmLabel="Delete record"
-        loading={saving}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => void confirmDeletePet()}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!requestDeleteTarget}
-        title="Request adoption deletion?"
-        description={
-          requestDeleteTarget
-            ? `Send a delete request for ${requestDeleteTarget.petName}? A super admin will review it before removal.`
-            : ''
-        }
-        confirmLabel="Send request"
-        loading={saving}
-        onClose={() => setRequestDeleteTarget(null)}
-        onConfirm={() => void submitDeleteRequest()}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!cancelRequestTarget}
-        title="Cancel delete request?"
-        description={cancelRequestTarget ? `Cancel the pending delete request for ${cancelRequestTarget.petName}?` : ''}
-        confirmLabel="Cancel request"
-        confirmColor="warning"
-        confirmIcon="close"
-        loading={saving}
-        onClose={() => setCancelRequestTarget(null)}
-        onConfirm={() => void cancelDeleteRequest()}
       />
 
       <ConfirmDeleteDialog

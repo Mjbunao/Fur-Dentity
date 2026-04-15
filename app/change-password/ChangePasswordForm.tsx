@@ -123,6 +123,7 @@ export default function ChangePasswordForm() {
       <Stack spacing={2}>
         <TextField
           label="New Password"
+          required
           variant="outlined"
           size="small"
           fullWidth
@@ -136,6 +137,7 @@ export default function ChangePasswordForm() {
 
         <TextField
           label="Confirm New Password"
+          required
           variant="outlined"
           size="small"
           fullWidth

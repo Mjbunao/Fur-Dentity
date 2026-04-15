@@ -9,6 +9,7 @@ import {
   type ShelterPetRecord,
   type UserRecord,
 } from '../../utils';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type RouteContext = {
   params: Promise<{
@@ -182,6 +183,30 @@ export async function PATCH(request: Request, context: RouteContext) {
         return Response.json({ error: 'Failed to accept adoption request.' }, { status: 500 });
       }
 
+      await createActivityLog({
+        session: verified.session,
+        idToken: verified.idToken,
+        log: {
+          action: 'accepted_adoption_request',
+          module: 'adoption',
+          subject: {
+            type: 'user',
+            id: userId,
+            name: getUserFullName(user),
+          },
+          target: {
+            type: 'adoption_pet',
+            id: petId,
+            name: pet.petName || 'No Name',
+          },
+          description: `${verified.session.name || verified.session.email} accepted ${getUserFullName(user)}'s adoption request for ${pet.petName || 'No Name'}.`,
+          metadata: {
+            requestId,
+            requesterEmail: user?.email,
+          },
+        },
+      });
+
       return Response.json({ ok: true });
     }
 
@@ -215,6 +240,30 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!rejectArchiveResponse.ok || !removeRequestResponse.ok) {
       return Response.json({ error: 'Failed to reject adoption request.' }, { status: 500 });
     }
+
+    await createActivityLog({
+      session: verified.session,
+      idToken: verified.idToken,
+      log: {
+        action: 'rejected_adoption_request',
+        module: 'adoption',
+        subject: {
+          type: 'user',
+          id: userId,
+          name: getUserFullName(user),
+        },
+        target: {
+          type: 'adoption_pet',
+          id: petId,
+          name: pet.petName || 'No Name',
+        },
+        description: `${verified.session.name || verified.session.email} rejected ${getUserFullName(user)}'s adoption request for ${pet.petName || 'No Name'}.`,
+        metadata: {
+          requestId,
+          requesterEmail: user?.email,
+        },
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

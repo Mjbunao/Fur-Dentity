@@ -1,5 +1,6 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type CreateAccountResponse = {
   localId?: string;
@@ -106,6 +107,31 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    await createActivityLog({
+      session,
+      idToken,
+      log: {
+        action: 'created_system_admin',
+        module: 'users',
+        subject: {
+          type: 'admin',
+          id: newUid,
+          name: trimmedName,
+        },
+        target: {
+          type: 'system_admin',
+          id: newUid,
+          name: trimmedName,
+        },
+        description: `${session.name || session.email} created system admin account ${trimmedName}.`,
+        metadata: {
+          email: trimmedEmail,
+          status: 'active',
+          mustChangePassword: true,
+        },
+      },
+    });
 
     return Response.json({
       ok: true,

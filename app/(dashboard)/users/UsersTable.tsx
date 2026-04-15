@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useEffectEvent, useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   InputAdornment,
   Paper,
@@ -23,8 +22,7 @@ import {
 } from '@mui/material';
 import type { AdminRole } from '@/lib/auth/types';
 import { auth } from '@/lib/firebase';
-import { DeleteOutlineIcon, SearchIcon, VisibilityRoundedIcon } from '@/components/icons';
-import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import { SearchIcon } from '@/components/icons';
 
 type UserRow = {
   id: string;
@@ -52,7 +50,9 @@ const tableContainerSx = {
   borderColor: 'grey.200',
 };
 
-export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
+export default function UsersTable(props: { adminRole: AdminRole }) {
+  void props.adminRole;
+  const router = useRouter();
   const [rows, setRows] = useState<UserRow[]>([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -61,11 +61,6 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [isPending, startTransition] = useTransition();
-  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
-
-  const canDelete = adminRole === 'super_admin';
 
   const getAuthHeaders = async () => {
     const currentUser = auth.currentUser;
@@ -154,45 +149,6 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
     setSortOrder('asc');
   };
 
-  const handleDeleteUser = (user: UserRow) => {
-    if (!canDelete) {
-      return;
-    }
-    setDeleteTarget(user);
-  };
-
-  const confirmDeleteUser = () => {
-    if (!deleteTarget) {
-      return;
-    }
-    startTransition(async () => {
-      try {
-        setMessage('');
-        setError('');
-
-        const headers = await getAuthHeaders();
-        const response = await fetch(`/api/users/${deleteTarget.id}`, {
-          method: 'DELETE',
-          headers,
-        });
-
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-        if (!response.ok) {
-          setError(data?.error || 'Failed to delete user.');
-          return;
-        }
-
-        setRows((currentRows) => currentRows.filter((row) => row.id !== deleteTarget.id));
-        setMessage(`${deleteTarget.name} was deleted successfully.`);
-        setDeleteTarget(null);
-      } catch (deleteError) {
-        console.error(deleteError);
-        setError('Failed to delete user.');
-      }
-    });
-  };
-
   return (
     <Paper
       elevation={0}
@@ -244,12 +200,6 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
         </Alert>
       ) : null}
 
-      {message ? (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {message}
-        </Alert>
-      ) : null}
-
       <TableContainer sx={{ ...tableContainerSx, maxHeight: 520 }}>
         <Table stickyHeader size="small" aria-label="users table">
           <TableHead>
@@ -270,9 +220,6 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
                   </TableSortLabel>
                 </TableCell>
               ))}
-              <TableCell sx={{ bgcolor: 'background.paper', fontWeight: 700, py: 1.25 }}>
-                Actions
-              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -307,7 +254,12 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
 
             {!loading
               ? paginatedRows.map((row) => (
-                  <TableRow hover key={row.id}>
+                  <TableRow
+                    hover
+                    key={row.id}
+                    onClick={() => router.push(`/users/${row.id}`)}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell sx={{ py: 1.25 }}>
                       <Stack direction="row" spacing={1.25} alignItems="center">
                         <Box
@@ -336,33 +288,6 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
                     <TableCell sx={{ py: 1.25 }}>{row.email}</TableCell>
                     <TableCell sx={{ py: 1.25 }}>{row.contact}</TableCell>
                     <TableCell sx={{ py: 1.25 }} align="right">{row.petsCount}</TableCell>
-                    <TableCell sx={{ py: 1.25 }}>
-                      <Stack direction="row" spacing={0.75}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          component={Link}
-                          href={`/users/${row.id}`}
-                          startIcon={<VisibilityRoundedIcon fontSize="small" />}
-                          sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                        >
-                          View
-                        </Button>
-                        {canDelete ? (
-                          <Button
-                            size="small"
-                            color="error"
-                            variant="outlined"
-                            onClick={() => handleDeleteUser(row)}
-                            startIcon={<DeleteOutlineIcon fontSize="small" />}
-                            disabled={isPending}
-                            sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                          >
-                            Delete
-                          </Button>
-                        ) : null}
-                      </Stack>
-                    </TableCell>
                   </TableRow>
                 ))
               : null}
@@ -390,20 +315,6 @@ export default function UsersTable({ adminRole }: { adminRole: AdminRole }) {
             fontSize: '0.8125rem',
           },
         }}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!deleteTarget}
-        title="Delete user record?"
-        description={
-          deleteTarget
-            ? `Delete ${deleteTarget.name}? This removes the user record from the database.`
-            : ''
-        }
-        confirmLabel="Delete user"
-        loading={isPending}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDeleteUser}
       />
     </Paper>
   );

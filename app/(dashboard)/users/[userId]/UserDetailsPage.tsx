@@ -14,8 +14,9 @@ import {
 } from '@mui/material';
 import type { AdminRole } from '@/lib/auth/types';
 import { auth } from '@/lib/firebase';
-import { ArrowBackRoundedIcon, DeleteOutlineIcon } from '@/components/icons';
+import { DeleteOutlineIcon } from '@/components/icons';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import { DetailCard, DetailInfoRow, DetailPageHeader } from '@/components/DetailPageScaffold';
 
 type UserDetails = {
   user: {
@@ -140,33 +141,23 @@ export default function UserDetailsPage({
     }
   };
 
+  const userRows = details
+    ? [
+        ['Email', details.user.email],
+        ['Contact', details.user.contact],
+        ['Address', details.user.address],
+      ]
+    : [];
+
   return (
     <Stack spacing={2.5}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'flex-start' }}
-        spacing={1.5}
-      >
-        <Box>
-          <Button
-            variant="text"
-            onClick={() => router.push('/users')}
-            startIcon={<ArrowBackRoundedIcon fontSize="small" />}
-            sx={{ mb: 1.5, px: 0.5 }}
-          >
-            Back to users
-          </Button>
-
-          <Typography variant="h5" fontWeight={700}>
-            User Profile Information
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Review this user&apos;s account details and the pets linked from the mobile app.
-          </Typography>
-        </Box>
-
-        {canDelete ? (
+      <DetailPageHeader
+        title="User Profile Information"
+        description="Review this user's account details and the pets linked from the mobile app."
+        backLabel="Back to users"
+        onBack={() => router.push('/users')}
+        action={
+          canDelete ? (
           <Button
             color="error"
             variant="outlined"
@@ -178,41 +169,26 @@ export default function UserDetailsPage({
           >
             Delete
           </Button>
-        ) : null}
-      </Stack>
+          ) : null
+        }
+      />
 
       {loading ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            border: '1px solid',
-            borderColor: 'grey.200',
-          }}
-        >
+        <DetailCard>
           <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center">
             <CircularProgress size={24} />
             <Typography variant="body2" color="text.secondary">
               Loading user details...
             </Typography>
           </Stack>
-        </Paper>
+        </DetailCard>
       ) : null}
 
       {!loading && error ? <Alert severity="error">{error}</Alert> : null}
 
       {!loading && details ? (
         <>
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: 2, md: 2.5 },
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: 'grey.200',
-            }}
-          >
+          <DetailCard>
             <Stack
               direction={{ xs: 'column', md: 'row' }}
               spacing={2.5}
@@ -236,18 +212,12 @@ export default function UserDetailsPage({
                 <Typography variant="h6" fontWeight={700}>
                   {details.user.name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Email: {details.user.email}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Contact: {details.user.contact}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Address: {details.user.address}
-                </Typography>
+                {userRows.map(([label, value]) => (
+                  <DetailInfoRow key={label} label={label} value={value} />
+                ))}
               </Stack>
             </Stack>
-          </Paper>
+          </DetailCard>
 
           <Box>
             <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>

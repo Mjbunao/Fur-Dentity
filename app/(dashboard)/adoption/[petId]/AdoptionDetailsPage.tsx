@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Alert,
   Box,
@@ -11,29 +11,40 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Paper,
   Stack,
   Typography,
 } from '@mui/material';
 import type { AdminRole } from '@/lib/auth/types';
 import { auth } from '@/lib/firebase';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import { DetailCard, DetailInfoRow, DetailPageHeader } from '@/components/DetailPageScaffold';
 import {
-  ArrowBackRoundedIcon,
   CheckCircleRoundedIcon,
+  CloseRoundedIcon,
   DeleteOutlineIcon,
   DoNotDisturbOnRoundedIcon,
+  EditRoundedIcon,
+  RequestPageRoundedIcon,
 } from '@/components/icons';
-import type { AdoptionPetRow, AdoptionRequestRow } from '../types';
+import AdoptionPetFormDialog from '../AdoptionPetFormDialog';
+import type { AdoptionBreedOptions, AdoptionPetFormPayload, AdoptionPetRow, AdoptionRequestRow } from '../types';
 
 type AdoptionDetailsPageProps = {
   petId: string;
   adminRole: AdminRole;
+  adminUid: string;
+  adminName?: string;
+  adminEmail: string;
 };
 
-export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetailsPageProps) {
+export default function AdoptionDetailsPage({ petId, adminRole, adminUid, adminName, adminEmail }: AdoptionDetailsPageProps) {
+  const router = useRouter();
   const [pet, setPet] = useState<AdoptionPetRow | null>(null);
   const [requests, setRequests] = useState<AdoptionRequestRow[]>([]);
+  const [breedOptions, setBreedOptions] = useState<AdoptionBreedOptions>({
+    dogBreeds: [],
+    catBreeds: [],
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -41,6 +52,9 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
   const [requestTarget, setRequestTarget] = useState<AdoptionRequestRow | null>(null);
   const [requestAction, setRequestAction] = useState<'accept' | 'reject'>('accept');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [requestDeleteOpen, setRequestDeleteOpen] = useState(false);
+  const [cancelRequestOpen, setCancelRequestOpen] = useState(false);
 
   const canDelete = adminRole === 'super_admin';
 
@@ -65,14 +79,27 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
       setError('');
 
       const headers = await getAuthHeaders();
-      const petResponse = await fetch(`/api/adoptions/${petId}`, { headers });
+      const [petResponse, metaResponse] = await Promise.all([
+        fetch(`/api/adoptions/${petId}`, { headers }),
+        fetch('/api/adoptions/meta', { headers }),
+      ]);
       const petData = (await petResponse.json().catch(() => null)) as
         | { pet?: AdoptionPetRow; error?: string }
+        | null;
+      const metaData = (await metaResponse.json().catch(() => null)) as
+        | { dogBreeds?: string[]; catBreeds?: string[]; error?: string }
         | null;
 
       if (!petResponse.ok || !petData?.pet) {
         setError(petData?.error || 'Failed to load adoption details.');
         return;
+      }
+
+      if (metaResponse.ok) {
+        setBreedOptions({
+          dogBreeds: metaData?.dogBreeds ?? [],
+          catBreeds: metaData?.catBreeds ?? [],
+        });
       }
 
       setPet(petData.pet);
@@ -179,6 +206,118 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
     }
   };
 
+  const updatePet = async (payload: AdoptionPetFormPayload) => {
+    if (!pet) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+      setMessage('');
+
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/adoptions/${pet.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json().catch(() => null)) as { pet?: AdoptionPetRow; error?: string } | null;
+
+      if (!response.ok || !data?.pet) {
+        setError(data?.error || 'Failed to update adoption pet.');
+        return;
+      }
+
+      setPet(data.pet);
+      setMessage('Adoption pet updated successfully.');
+      setEditOpen(false);
+    } catch (submitError) {
+      console.error(submitError);
+      setError('Failed to update adoption pet.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitDeleteRequest = async () => {
+    if (!pet) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+      setMessage('');
+
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/adoptions/delete-requests', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          petId: pet.id,
+          petName: pet.petName,
+          petStatus: pet.status,
+          requestedByUid: adminUid,
+          requestedByName: adminName || 'System Admin',
+          requestedByEmail: adminEmail,
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        setError(data?.error || 'Failed to submit adoption delete request.');
+        return;
+      }
+
+      setPet((current) => (current ? { ...current, requestStatus: 'pending' } : current));
+      setMessage(`Delete request submitted for ${pet.petName}.`);
+      setRequestDeleteOpen(false);
+    } catch (requestError) {
+      console.error(requestError);
+      setError('Failed to submit adoption delete request.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelDeleteRequest = async () => {
+    if (!pet) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+      setMessage('');
+
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/adoptions/delete-requests', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({
+          petId: pet.id,
+          petStatus: pet.status,
+        }),
+      });
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+
+      if (!response.ok) {
+        setError(data?.error || 'Failed to cancel adoption delete request.');
+        return;
+      }
+
+      setPet((current) => (current ? { ...current, requestStatus: null } : current));
+      setMessage(`Delete request canceled for ${pet.petName}.`);
+      setCancelRequestOpen(false);
+    } catch (cancelError) {
+      console.error(cancelError);
+      setError('Failed to cancel adoption delete request.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Stack direction="row" spacing={1.5} alignItems="center">
@@ -194,46 +333,82 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
     return <Alert severity="error">{error || 'Adoption record not found.'}</Alert>;
   }
 
-  return (
-    <Stack spacing={2.25}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
-        <Button
-          component={Link}
-          href="/adoption"
-          variant="text"
-          size="small"
-          startIcon={<ArrowBackRoundedIcon fontSize="small" />}
-          sx={{ alignSelf: 'flex-start', px: 0.5 }}
-        >
-          Back to adoption
-        </Button>
+  const petRows = [
+    ['Age', pet.petAge],
+    ['Type', pet.type],
+    ['Gender', pet.gender],
+    ['Breed', pet.breed],
+    ...(pet.status === 'adopted'
+      ? [
+          ['Adopted by', pet.adopterName || 'Unknown'],
+          ['Email', pet.adopterEmail || 'Unknown'],
+          ['Contact', pet.adopterContact || 'Unknown'],
+          ['Address', pet.adopterAddress || 'Unknown'],
+          ['Adopted at', pet.adoptedAt || 'Unknown'],
+        ]
+      : []),
+  ];
 
-        {canDelete ? (
-          <Button
-            color="error"
-            variant="outlined"
-            size="small"
-            startIcon={<DeleteOutlineIcon fontSize="small" />}
-            onClick={() => setDeleteOpen(true)}
-            sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
-          >
-            Delete
-          </Button>
-        ) : null}
-      </Stack>
+  return (
+    <Stack spacing={2.5}>
+      <DetailPageHeader
+        title="Adoption Information"
+        description="Review this adoption pet record, adopter details, and mobile adoption requests."
+        backLabel="Back to adoption"
+        onBack={() => router.push('/adoption')}
+        action={
+          <Stack direction="row" spacing={0.75} flexWrap="wrap">
+            {pet.status === 'shelter' ? (
+              <Button
+                color="warning"
+                variant="outlined"
+                size="small"
+                startIcon={<EditRoundedIcon fontSize="small" />}
+                onClick={() => setEditOpen(true)}
+                sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
+              >
+                Edit
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button
+                color="error"
+                variant="outlined"
+                size="small"
+                startIcon={<DeleteOutlineIcon fontSize="small" />}
+                onClick={() => setDeleteOpen(true)}
+                sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
+              >
+                Delete
+              </Button>
+            ) : (
+              <Button
+                color="error"
+                variant="outlined"
+                size="small"
+                startIcon={
+                  pet.requestStatus === 'pending' ? (
+                    <CloseRoundedIcon fontSize="small" />
+                  ) : (
+                    <RequestPageRoundedIcon fontSize="small" />
+                  )
+                }
+                onClick={() =>
+                  pet.requestStatus === 'pending' ? setCancelRequestOpen(true) : setRequestDeleteOpen(true)
+                }
+                sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
+              >
+                {pet.requestStatus === 'pending' ? 'Cancel Request' : 'Request Delete'}
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error ? <Alert severity="error">{error}</Alert> : null}
       {message ? <Alert severity="success">{message}</Alert> : null}
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 2.5 },
-          borderRadius: 2.5,
-          border: '1px solid',
-          borderColor: 'grey.200',
-        }}
-      >
+      <DetailCard>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2.5}>
           <Box
             component="img"
@@ -268,34 +443,16 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
             <Divider sx={{ my: 2 }} />
 
             <Stack spacing={0.75}>
-              <Typography variant="body2"><strong>Age:</strong> {pet.petAge}</Typography>
-              <Typography variant="body2"><strong>Type:</strong> {pet.type}</Typography>
-              <Typography variant="body2"><strong>Gender:</strong> {pet.gender}</Typography>
-              <Typography variant="body2"><strong>Breed:</strong> {pet.breed}</Typography>
-              {pet.status === 'adopted' ? (
-                <>
-                  <Typography variant="body2"><strong>Adopted by:</strong> {pet.adopterName}</Typography>
-                  <Typography variant="body2"><strong>Email:</strong> {pet.adopterEmail}</Typography>
-                  <Typography variant="body2"><strong>Contact:</strong> {pet.adopterContact}</Typography>
-                  <Typography variant="body2"><strong>Address:</strong> {pet.adopterAddress}</Typography>
-                  <Typography variant="body2"><strong>Adopted at:</strong> {pet.adoptedAt}</Typography>
-                </>
-              ) : null}
+              {petRows.map(([label, value]) => (
+                <DetailInfoRow key={label} label={label} value={value} />
+              ))}
             </Stack>
           </Box>
         </Stack>
-      </Paper>
+      </DetailCard>
 
       {pet.status === 'shelter' ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, md: 2.5 },
-            borderRadius: 2.5,
-            border: '1px solid',
-            borderColor: 'grey.200',
-          }}
-        >
+        <DetailCard>
           <Typography variant="h6" fontWeight={700}>
             Adoption Requests
           </Typography>
@@ -364,7 +521,7 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
               </Card>
             ))}
           </Stack>
-        </Paper>
+        </DetailCard>
       ) : null}
 
       <ConfirmDeleteDialog
@@ -393,6 +550,39 @@ export default function AdoptionDetailsPage({ petId, adminRole }: AdoptionDetail
         loading={saving}
         onClose={() => setDeleteOpen(false)}
         onConfirm={() => void deleteRecord()}
+      />
+
+      <ConfirmDeleteDialog
+        open={requestDeleteOpen}
+        title="Request adoption deletion?"
+        description={`Send a delete request for ${pet.petName}? A super admin will review it before removal.`}
+        confirmLabel="Send request"
+        loading={saving}
+        onClose={() => setRequestDeleteOpen(false)}
+        onConfirm={() => void submitDeleteRequest()}
+      />
+
+      <ConfirmDeleteDialog
+        open={cancelRequestOpen}
+        title="Cancel delete request?"
+        description={`Cancel the pending delete request for ${pet.petName}?`}
+        confirmLabel="Cancel request"
+        confirmColor="warning"
+        confirmIcon="close"
+        loading={saving}
+        onClose={() => setCancelRequestOpen(false)}
+        onConfirm={() => void cancelDeleteRequest()}
+      />
+
+      <AdoptionPetFormDialog
+        key={`${pet.id}-${editOpen ? 'open' : 'closed'}`}
+        open={editOpen}
+        mode="edit"
+        pet={pet}
+        breedOptions={breedOptions}
+        loading={saving}
+        onClose={() => setEditOpen(false)}
+        onSubmit={updatePet}
       />
     </Stack>
   );

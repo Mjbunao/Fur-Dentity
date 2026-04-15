@@ -1,6 +1,7 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type DeleteRequestRecord = {
   donationId?: string;
@@ -14,6 +15,11 @@ type DeleteRequestRecord = {
 };
 
 type DonationRecord = {
+  donorType?: string;
+  userId?: string;
+  name?: string;
+  amount?: number;
+  platform?: string;
   requestStatus?: 'pending' | 'approved' | 'rejected' | null;
   deleteRequestId?: string | null;
   deleteRequestByUid?: string | null;
@@ -176,6 +182,31 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Delete request was created but donation status could not be updated.' }, { status: updateDonationResponse.status });
     }
 
+    await createActivityLog({
+      session,
+      idToken,
+      log: {
+        action: 'requested_delete',
+        module: 'donation',
+        subject: {
+          type: donationRecord?.donorType === 'Unregistered User' ? 'donor' : 'user',
+          id: donationRecord?.userId,
+          name: body.donationName,
+        },
+        target: {
+          type: 'donation',
+          id: body.donationId,
+          name: `Donation by ${body.donationName}`,
+        },
+        description: `${session.name || session.email} requested deletion of ${body.donationName}'s donation record.`,
+        metadata: {
+          requestId: createdRequest.name,
+          amount: donationRecord?.amount,
+          platform: donationRecord?.platform,
+        },
+      },
+    });
+
     return Response.json({ ok: true });
   } catch (error) {
     console.error(error);
@@ -246,6 +277,31 @@ export async function DELETE(request: Request) {
     if (!deleteRequestResponse.ok || !clearStatusResponse.ok) {
       return Response.json({ error: 'Failed to cancel delete request.' }, { status: 500 });
     }
+
+    await createActivityLog({
+      session,
+      idToken,
+      log: {
+        action: 'canceled_delete_request',
+        module: 'donation',
+        subject: {
+          type: donationRecord.donorType === 'Unregistered User' ? 'donor' : 'user',
+          id: donationRecord.userId,
+          name: donationRecord.name || 'Unknown donor',
+        },
+        target: {
+          type: 'donation',
+          id: body.donationId,
+          name: `Donation by ${donationRecord.name || 'Unknown donor'}`,
+        },
+        description: `${session.name || session.email} canceled the delete request for ${donationRecord.name || 'Unknown donor'}'s donation record.`,
+        metadata: {
+          requestId: donationRecord.deleteRequestId,
+          amount: donationRecord.amount,
+          platform: donationRecord.platform,
+        },
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useEffectEvent, useMemo, useState } from 'react';
 import {
   Alert,
@@ -25,12 +25,7 @@ import { auth } from '@/lib/firebase';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import {
   AddRoundedIcon,
-  CloseRoundedIcon,
-  DeleteOutlineIcon,
-  EditRoundedIcon,
-  RequestPageRoundedIcon,
   SearchIcon,
-  VisibilityRoundedIcon,
 } from '@/components/icons';
 import DonationDeleteRequestsTable from './DonationDeleteRequestsTable';
 import DonationFormDialog, { type DonationFormPayload } from './DonationFormDialog';
@@ -53,10 +48,11 @@ const headCells: Array<{ id: SortKey; label: string; numeric?: boolean }> = [
 
 export default function DonationSection({
   adminRole,
-  adminUid,
-  adminName,
-  adminEmail,
+  adminUid: _adminUid,
+  adminName: _adminName,
+  adminEmail: _adminEmail,
 }: DonationSectionProps) {
+  const router = useRouter();
   const [rows, setRows] = useState<DonationRow[]>([]);
   const [users, setUsers] = useState<DonationUserOption[]>([]);
   const [requests, setRequests] = useState<DonationDeleteRequestRow[]>([]);
@@ -74,14 +70,13 @@ export default function DonationSection({
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedDonation, setSelectedDonation] = useState<DonationRow | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<DonationRow | null>(null);
-  const [requestDeleteTarget, setRequestDeleteTarget] = useState<DonationRow | null>(null);
-  const [cancelRequestTarget, setCancelRequestTarget] = useState<DonationRow | null>(null);
   const [reviewRequestTarget, setReviewRequestTarget] = useState<DonationDeleteRequestRow | null>(null);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
   const [saving, setSaving] = useState(false);
 
-  const canDelete = adminRole === 'super_admin';
+  void _adminUid;
+  void _adminName;
+  void _adminEmail;
 
   const getAuthHeaders = async () => {
     const currentUser = auth.currentUser;
@@ -234,12 +229,6 @@ export default function DonationSection({
     setFormOpen(true);
   };
 
-  const openEditDialog = (donation: DonationRow) => {
-    setFormMode('edit');
-    setSelectedDonation(donation);
-    setFormOpen(true);
-  };
-
   const handleSubmitDonation = async (payload: DonationFormPayload) => {
     try {
       setSaving(true);
@@ -280,124 +269,6 @@ export default function DonationSection({
     } catch (submitError) {
       console.error(submitError);
       setError('Failed to save the donation.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const confirmDeleteDonation = async () => {
-    if (!deleteTarget) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-      setMessage('');
-
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/donations/${deleteTarget.id}`, {
-        method: 'DELETE',
-        headers,
-      });
-
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to delete donation.');
-        return;
-      }
-
-      setRows((current) => current.filter((row) => row.id !== deleteTarget.id));
-      setRequests((current) => current.filter((request) => request.donationId !== deleteTarget.id));
-      setMessage(`${deleteTarget.name} donation was deleted successfully.`);
-      setDeleteTarget(null);
-    } catch (deleteError) {
-      console.error(deleteError);
-      setError('Failed to delete donation.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const submitDeleteRequest = async () => {
-    if (!requestDeleteTarget) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-      setMessage('');
-
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/donations/delete-requests', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          donationId: requestDeleteTarget.id,
-          donationName: requestDeleteTarget.name,
-          requestedByUid: adminUid,
-          requestedByName: adminName || 'System Admin',
-          requestedByEmail: adminEmail,
-        }),
-      });
-
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to submit delete request.');
-        return;
-      }
-
-      setRows((current) =>
-        current.map((row) =>
-          row.id === requestDeleteTarget.id ? { ...row, requestStatus: 'pending' } : row
-        )
-      );
-      setMessage(`Delete request submitted for ${requestDeleteTarget.name}.`);
-      setRequestDeleteTarget(null);
-    } catch (requestError) {
-      console.error(requestError);
-      setError('Failed to submit delete request.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const cancelDeleteRequest = async () => {
-    if (!cancelRequestTarget) {
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError('');
-      setMessage('');
-
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/donations/delete-requests', {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify({ donationId: cancelRequestTarget.id }),
-      });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-
-      if (!response.ok) {
-        setError(data?.error || 'Failed to cancel delete request.');
-        return;
-      }
-
-      setRows((current) =>
-        current.map((row) =>
-          row.id === cancelRequestTarget.id ? { ...row, requestStatus: null } : row
-        )
-      );
-      setMessage(`Delete request canceled for ${cancelRequestTarget.name}.`);
-      setCancelRequestTarget(null);
-    } catch (cancelError) {
-      console.error(cancelError);
-      setError('Failed to cancel delete request.');
     } finally {
       setSaving(false);
     }
@@ -540,15 +411,12 @@ export default function DonationSection({
                 <TableCell sx={{ bgcolor: 'background.paper', fontWeight: 700, py: 1.25 }}>
                   Request
                 </TableCell>
-                <TableCell sx={{ bgcolor: 'background.paper', fontWeight: 700, py: 1.25 }}>
-                  Actions
-                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={5}>
                     <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center" py={5}>
                       <CircularProgress size={20} />
                       <Typography variant="body2" color="text.secondary">
@@ -561,7 +429,7 @@ export default function DonationSection({
 
               {!loading && paginatedRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={5}>
                     <Box py={5} textAlign="center">
                       <Typography variant="subtitle1" fontWeight={700}>
                         No donations found
@@ -576,7 +444,7 @@ export default function DonationSection({
 
               {!loading
                 ? paginatedRows.map((row) => (
-                    <TableRow hover key={row.id}>
+                    <TableRow hover key={row.id} onClick={() => router.push(`/donation/${row.id}`)} sx={{ cursor: 'pointer' }}>
                       <TableCell sx={{ py: 1.25 }}>
                         <Typography variant="body2" fontWeight={700}>
                           {row.name}
@@ -592,63 +460,6 @@ export default function DonationSection({
                       <TableCell sx={{ py: 1.25 }}>{row.platform}</TableCell>
                       <TableCell sx={{ py: 1.25, textTransform: 'capitalize' }}>
                         {row.requestStatus ?? 'None'}
-                      </TableCell>
-                      <TableCell sx={{ py: 1.25 }}>
-                        <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<VisibilityRoundedIcon fontSize="small" />}
-                            sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                            component={Link}
-                            href={`/donation/${row.id}`}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            startIcon={<EditRoundedIcon fontSize="small" />}
-                            sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                            onClick={() => openEditDialog(row)}
-                          >
-                            Edit
-                          </Button>
-                          {canDelete ? (
-                            <Button
-                              size="small"
-                              color="error"
-                              variant="outlined"
-                              startIcon={<DeleteOutlineIcon fontSize="small" />}
-                              sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                              onClick={() => setDeleteTarget(row)}
-                            >
-                              Delete
-                            </Button>
-                          ) : (
-                            <Button
-                              size="small"
-                              color="error"
-                              variant="outlined"
-                              startIcon={
-                                row.requestStatus === 'pending' ? (
-                                  <CloseRoundedIcon fontSize="small" />
-                                ) : (
-                                  <RequestPageRoundedIcon fontSize="small" />
-                                )
-                              }
-                              sx={{ minWidth: 0, px: 1, py: 0.35, fontSize: '0.75rem' }}
-                              onClick={() =>
-                                row.requestStatus === 'pending'
-                                  ? setCancelRequestTarget(row)
-                                  : setRequestDeleteTarget(row)
-                              }
-                            >
-                              {row.requestStatus === 'pending' ? 'Cancel Request' : 'Request Delete'}
-                            </Button>
-                          )}
-                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))
@@ -708,38 +519,6 @@ export default function DonationSection({
           setSelectedDonation(null);
         }}
         onSubmit={handleSubmitDonation}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!deleteTarget}
-        title="Delete donation record?"
-        description={deleteTarget ? `Delete ${deleteTarget.name}'s donation? This permanently removes the record from the database.` : ''}
-        confirmLabel="Delete donation"
-        loading={saving}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => void confirmDeleteDonation()}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!requestDeleteTarget}
-        title="Request donation deletion?"
-        description={requestDeleteTarget ? `Send a delete request for ${requestDeleteTarget.name}'s donation? A super admin will review it before removal.` : ''}
-        confirmLabel="Send request"
-        loading={saving}
-        onClose={() => setRequestDeleteTarget(null)}
-        onConfirm={() => void submitDeleteRequest()}
-      />
-
-      <ConfirmDeleteDialog
-        open={!!cancelRequestTarget}
-        title="Cancel delete request?"
-        description={cancelRequestTarget ? `Cancel the pending delete request for ${cancelRequestTarget.name}'s donation?` : ''}
-        confirmLabel="Cancel request"
-        confirmColor="warning"
-        confirmIcon="close"
-        loading={saving}
-        onClose={() => setCancelRequestTarget(null)}
-        onConfirm={() => void cancelDeleteRequest()}
       />
 
       <ConfirmDeleteDialog

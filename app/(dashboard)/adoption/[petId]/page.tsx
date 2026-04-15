@@ -10,5 +10,13 @@ type AdoptionDetailsRouteProps = {
 export default async function AdoptionDetailsRoute({ params }: AdoptionDetailsRouteProps) {
   const [{ petId }, session] = await Promise.all([params, requireSession()]);
 
-  return <AdoptionDetailsPage petId={petId} adminRole={session.role} />;
+  return (
+    <AdoptionDetailsPage
+      petId={petId}
+      adminRole={session.role}
+      adminUid={session.uid}
+      adminName={session.name}
+      adminEmail={session.email}
+    />
+  );
 }

@@ -14,6 +14,9 @@ export default async function DonationDetailsRoute({
     <DonationDetailsPage
       donationId={donationId}
       adminRole={session.role as AdminRole}
+      adminUid={session.uid}
+      adminName={session.name}
+      adminEmail={session.email}
     />
   );
 }

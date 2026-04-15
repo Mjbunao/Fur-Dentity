@@ -1,6 +1,7 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type RouteContext = {
   params: Promise<{
@@ -18,6 +19,14 @@ type DeleteRequestRecord = {
   createdAt?: string;
   resolvedAt?: string;
   resolvedByUid?: string;
+};
+
+type DonationRecord = {
+  donorType?: string;
+  userId?: string;
+  name?: string;
+  amount?: number;
+  platform?: string;
 };
 
 const getIdTokenFromRequest = (request: Request) => {
@@ -65,6 +74,13 @@ export async function PATCH(request: Request, context: RouteContext) {
       return Response.json({ error: 'Delete request not found.' }, { status: 404 });
     }
 
+    const donationResponse = await fetch(
+      `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}.json?auth=${encodeURIComponent(idToken)}`,
+      { cache: 'no-store' }
+    );
+    const donationRecord = donationResponse.ok ? ((await donationResponse.json()) as DonationRecord | null) : null;
+    const donorName = donationRecord?.name || requestRecord.donationName || 'Unknown donor';
+
     if (action === 'approve') {
       const deleteDonationResponse = await fetch(
         `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}.json?auth=${encodeURIComponent(idToken)}`,
@@ -77,6 +93,32 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (!deleteDonationResponse.ok) {
         return Response.json({ error: 'Failed to delete the donation record.' }, { status: deleteDonationResponse.status });
       }
+
+      await createActivityLog({
+        session,
+        idToken,
+        log: {
+          action: 'approved_delete_request',
+          module: 'donation',
+          subject: {
+            type: donationRecord?.donorType === 'Unregistered User' ? 'donor' : 'user',
+            id: donationRecord?.userId,
+            name: donorName,
+          },
+          target: {
+            type: 'donation',
+            id: requestRecord.donationId,
+            name: `Donation by ${donorName}`,
+          },
+          description: `${session.name || session.email} approved ${requestRecord.requestedByName || 'System Admin'}'s delete request and deleted ${donorName}'s donation record.`,
+          metadata: {
+            requestId,
+            requestedByName: requestRecord.requestedByName,
+            amount: donationRecord?.amount,
+            platform: donationRecord?.platform,
+          },
+        },
+      });
     } else {
       const resetDonationStatusResponse = await fetch(
         `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}.json?auth=${encodeURIComponent(idToken)}`,
@@ -95,6 +137,32 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (!resetDonationStatusResponse.ok) {
         return Response.json({ error: 'Failed to update the donation request status.' }, { status: resetDonationStatusResponse.status });
       }
+
+      await createActivityLog({
+        session,
+        idToken,
+        log: {
+          action: 'rejected_delete_request',
+          module: 'donation',
+          subject: {
+            type: donationRecord?.donorType === 'Unregistered User' ? 'donor' : 'user',
+            id: donationRecord?.userId,
+            name: donorName,
+          },
+          target: {
+            type: 'donation',
+            id: requestRecord.donationId,
+            name: `Donation by ${donorName}`,
+          },
+          description: `${session.name || session.email} rejected ${requestRecord.requestedByName || 'System Admin'}'s delete request for ${donorName}'s donation record.`,
+          metadata: {
+            requestId,
+            requestedByName: requestRecord.requestedByName,
+            amount: donationRecord?.amount,
+            platform: donationRecord?.platform,
+          },
+        },
+      });
     }
 
     const deleteRequestResponse = await fetch(

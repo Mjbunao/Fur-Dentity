@@ -7,8 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { auth, signOut } from '@/lib/firebase';
 import type { AdminRole } from '@/lib/auth/types';
 
-import { AdminPanelSettingsIcon, BadgeIcon, DashboardIcon, ExpandMoreRoundedIcon, ReportProblemRoundedIcon, PetsSharpIcon, MonetizationOnSharpIcon,PeopleAltSharpIcon,HealthAndSafetySharpIcon,GpsFixedSharpIcon } from '@/components/icons';
-import { colors } from '@mui/material';
+import { AdminPanelSettingsIcon, BadgeIcon, DashboardIcon, ExpandMoreRoundedIcon, ReportProblemRoundedIcon, PetsSharpIcon, MonetizationOnSharpIcon,PeopleAltSharpIcon,HealthAndSafetySharpIcon,GpsFixedSharpIcon, HistoryRoundedIcon } from '@/components/icons';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: <DashboardIcon sx={{fontSize: 20}}/> },
@@ -36,6 +35,7 @@ const navItems = [
   },
   { href: '/pets', label: 'Pets', icon: <PetsSharpIcon sx={{fontSize: 20}}/> },
   { href: '/gps-devices', label: 'GPS Device', icon: <GpsFixedSharpIcon sx={{fontSize: 20}}/> },
+  { href: '/activity-logs', label: 'Activity Logs', icon: <HistoryRoundedIcon sx={{fontSize: 20}}/>, roles: ['super_admin'] as AdminRole[] },
 ];
 
 type DashboardShellProps = {
@@ -120,8 +120,14 @@ export default function DashboardShell({
 
   const handleLogout = async () => {
     try {
+      const idToken = await auth.currentUser?.getIdToken().catch(() => null);
       await fetch('/api/session/logout', {
         method: 'POST',
+        headers: idToken
+          ? {
+              Authorization: `Bearer ${idToken}`,
+            }
+          : undefined,
       });
     } finally {
       await signOut(auth).catch(() => undefined);
@@ -161,6 +167,10 @@ export default function DashboardShell({
 
           <nav className="flex text-center gap-1 overflow-x-auto px-4 pb-4 md:flex-col md:overflow-visible md:px-4">
             {navItems.map((item) => {
+              if ('roles' in item && item.roles && !item.roles.includes(adminRole)) {
+                return null;
+              }
+
               const isActive = isNavItemActive(item.href);
               const visibleChildren = item.children ?? [];
 

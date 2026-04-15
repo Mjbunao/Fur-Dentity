@@ -39,6 +39,8 @@ const defaultForm = (): AdoptionPetFormPayload => ({
   profileURL: '',
 });
 
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
 export default function AdoptionPetFormDialog({
   open,
   mode,
@@ -77,8 +79,8 @@ export default function AdoptionPetFormDialog({
     event.preventDefault();
     setError('');
 
-    if (!form.type || !form.gender || !form.breed.trim()) {
-      setError('Type, gender, and breed are required.');
+    if (!form.petName.trim() || !form.petAge.trim() || !form.type || !form.gender || !form.breed.trim()) {
+      setError('Name, age, type, gender, and breed are required.');
       return;
     }
 
@@ -109,6 +111,7 @@ export default function AdoptionPetFormDialog({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 label="Name"
+                required
                 size="small"
                 fullWidth
                 value={form.petName}
@@ -117,16 +120,19 @@ export default function AdoptionPetFormDialog({
               />
               <TextField
                 label="Age"
+                required
                 size="small"
                 fullWidth
                 value={form.petAge}
-                onChange={(event) => handleChange('petAge', event.target.value)}
+                onChange={(event) => handleChange('petAge', onlyDigits(event.target.value))}
                 disabled={loading}
+                inputMode="numeric"
+                slotProps={{ htmlInput: { pattern: '[0-9]*' } }}
               />
             </Stack>
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <FormControl size="small" fullWidth>
+              <FormControl size="small" fullWidth required>
                 <InputLabel id="adoption-type-label">Type</InputLabel>
                 <Select
                   labelId="adoption-type-label"
@@ -146,7 +152,7 @@ export default function AdoptionPetFormDialog({
                   <MenuItem value="Cat">Cat</MenuItem>
                 </Select>
               </FormControl>
-              <FormControl size="small" fullWidth>
+              <FormControl size="small" fullWidth required>
                 <InputLabel id="adoption-gender-label">Gender</InputLabel>
                 <Select
                   labelId="adoption-gender-label"
@@ -161,7 +167,7 @@ export default function AdoptionPetFormDialog({
               </FormControl>
             </Stack>
 
-            <FormControl size="small" fullWidth disabled={loading || !form.type}>
+            <FormControl size="small" fullWidth required disabled={loading || !form.type}>
               <InputLabel id="adoption-breed-label">Breed</InputLabel>
               <Select
                 labelId="adoption-breed-label"

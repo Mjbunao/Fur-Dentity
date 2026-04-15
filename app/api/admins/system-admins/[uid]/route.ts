@@ -1,6 +1,7 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type RouteContext = {
   params: Promise<{
@@ -16,6 +17,14 @@ const getIdTokenFromRequest = (request: Request) => {
   }
 
   return authorization.slice('Bearer '.length).trim();
+};
+
+type AdminRecord = {
+  email?: string;
+  name?: string;
+  role?: string;
+  status?: string;
+  mustChangePassword?: boolean;
 };
 
 export async function DELETE(request: Request, context: RouteContext) {
@@ -44,6 +53,20 @@ export async function DELETE(request: Request, context: RouteContext) {
       return Response.json({ error: 'You cannot remove your own super admin access here.' }, { status: 400 });
     }
 
+    const adminResponse = await fetch(
+      `${firebaseConfig.databaseURL}/admins/${encodeURIComponent(uid)}.json?auth=${encodeURIComponent(idToken)}`,
+      { cache: 'no-store' }
+    );
+
+    if (!adminResponse.ok) {
+      return Response.json({ error: 'Failed to load the system admin before deletion.' }, { status: adminResponse.status });
+    }
+
+    const adminRecord = (await adminResponse.json()) as AdminRecord | null;
+    if (!adminRecord) {
+      return Response.json({ error: 'System admin record not found.' }, { status: 404 });
+    }
+
     const response = await fetch(
       `${firebaseConfig.databaseURL}/admins/${encodeURIComponent(uid)}.json?auth=${encodeURIComponent(idToken)}`,
       {
@@ -55,6 +78,31 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!response.ok) {
       return Response.json({ error: 'Failed to remove the system admin record.' }, { status: response.status });
     }
+
+    await createActivityLog({
+      session,
+      idToken,
+      log: {
+        action: 'deleted_system_admin',
+        module: 'users',
+        subject: {
+          type: 'admin',
+          id: uid,
+          name: adminRecord.name || adminRecord.email || 'Unknown admin',
+        },
+        target: {
+          type: 'system_admin',
+          id: uid,
+          name: adminRecord.name || adminRecord.email || 'Unknown admin',
+        },
+        description: `${session.name || session.email} removed system admin account ${adminRecord.name || adminRecord.email || 'Unknown admin'}.`,
+        metadata: {
+          email: adminRecord.email,
+          previousStatus: adminRecord.status,
+          role: adminRecord.role,
+        },
+      },
+    });
 
     return Response.json({
       ok: true,
@@ -95,6 +143,20 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const { uid } = await context.params;
 
+    const adminResponse = await fetch(
+      `${firebaseConfig.databaseURL}/admins/${encodeURIComponent(uid)}.json?auth=${encodeURIComponent(idToken)}`,
+      { cache: 'no-store' }
+    );
+
+    if (!adminResponse.ok) {
+      return Response.json({ error: 'Failed to load the system admin before status update.' }, { status: adminResponse.status });
+    }
+
+    const adminRecord = (await adminResponse.json()) as AdminRecord | null;
+    if (!adminRecord) {
+      return Response.json({ error: 'System admin record not found.' }, { status: 404 });
+    }
+
     const response = await fetch(
       `${firebaseConfig.databaseURL}/admins/${encodeURIComponent(uid)}/status.json?auth=${encodeURIComponent(idToken)}`,
       {
@@ -109,6 +171,33 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!response.ok) {
       return Response.json({ error: 'Failed to update the system admin status.' }, { status: response.status });
+    }
+
+    if (adminRecord.status !== normalizedStatus) {
+      await createActivityLog({
+        session,
+        idToken,
+        log: {
+          action: 'updated_system_admin_status',
+          module: 'users',
+          subject: {
+            type: 'admin',
+            id: uid,
+            name: adminRecord.name || adminRecord.email || 'Unknown admin',
+          },
+          target: {
+            type: 'system_admin',
+            id: uid,
+            name: adminRecord.name || adminRecord.email || 'Unknown admin',
+          },
+          description: `${session.name || session.email} updated system admin ${adminRecord.name || adminRecord.email || 'Unknown admin'} from ${adminRecord.status || 'unknown'} to ${normalizedStatus}.`,
+          metadata: {
+            email: adminRecord.email,
+            previousStatus: adminRecord.status,
+            newStatus: normalizedStatus,
+          },
+        },
+      });
     }
 
     return Response.json({

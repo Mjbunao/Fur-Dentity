@@ -1,4 +1,5 @@
 import { databaseUrl, requireVerifiedAdmin, type AdoptionDeleteRequestRecord } from '../../utils';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type RouteContext = {
   params: Promise<{
@@ -85,6 +86,34 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!deleteRequestResponse.ok) {
       return Response.json({ error: 'Failed to remove adoption delete request.' }, { status: deleteRequestResponse.status });
     }
+
+    await createActivityLog({
+      session: verified.session,
+      idToken: verified.idToken,
+      log: {
+        action: action === 'approve' ? 'approved_delete_request' : 'rejected_delete_request',
+        module: 'adoption',
+        subject: {
+          type: 'admin',
+          id: requestRecord.requestedByUid,
+          name: requestRecord.requestedByName,
+        },
+        target: {
+          type: requestRecord.petStatus === 'adopted' ? 'adopted_pet' : 'shelter_pet',
+          id: requestRecord.petId,
+          name: requestRecord.petName || 'Unknown pet',
+        },
+        description:
+          action === 'approve'
+            ? `${verified.session.name || verified.session.email} approved the delete request and removed adoption record ${requestRecord.petName || 'Unknown pet'}.`
+            : `${verified.session.name || verified.session.email} rejected the delete request for adoption record ${requestRecord.petName || 'Unknown pet'}.`,
+        metadata: {
+          requestId,
+          petStatus: requestRecord.petStatus,
+          requestedByEmail: requestRecord.requestedByEmail,
+        },
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

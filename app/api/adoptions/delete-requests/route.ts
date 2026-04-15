@@ -6,6 +6,7 @@ import {
   type AdoptedPetRecord,
   type ShelterPetRecord,
 } from '../utils';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type DeleteRequestPayload = {
   petId?: string;
@@ -146,6 +147,25 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Delete request was created but adoption status could not be updated.' }, { status: statusResponse.status });
     }
 
+    await createActivityLog({
+      session: verified.session,
+      idToken: verified.idToken,
+      log: {
+        action: 'requested_delete',
+        module: 'adoption',
+        target: {
+          type: petStatus === 'adopted' ? 'adopted_pet' : 'shelter_pet',
+          id: body.petId,
+          name: body.petName,
+        },
+        description: `${verified.session.name || verified.session.email} requested deletion of adoption record ${body.petName}.`,
+        metadata: {
+          requestId: createdRequest.name,
+          petStatus,
+        },
+      },
+    });
+
     return Response.json({ ok: true });
   } catch (error) {
     console.error(error);
@@ -212,6 +232,25 @@ export async function DELETE(request: Request) {
     if (!deleteRequestResponse.ok || !clearStatusResponse.ok) {
       return Response.json({ error: 'Failed to cancel adoption delete request.' }, { status: 500 });
     }
+
+    await createActivityLog({
+      session: verified.session,
+      idToken: verified.idToken,
+      log: {
+        action: 'canceled_delete_request',
+        module: 'adoption',
+        target: {
+          type: petStatus === 'adopted' ? 'adopted_pet' : 'shelter_pet',
+          id: body.petId,
+          name: petRecord.petName || 'No Name',
+        },
+        description: `${verified.session.name || verified.session.email} canceled the delete request for adoption record ${petRecord.petName || 'No Name'}.`,
+        metadata: {
+          requestId: petRecord.deleteRequestId,
+          petStatus,
+        },
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

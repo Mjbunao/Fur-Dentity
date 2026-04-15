@@ -1,6 +1,7 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type RouteContext = {
   params: Promise<{
@@ -17,6 +18,11 @@ type LegacyUserRecord = {
   address?: {
     fullAddress?: string;
   };
+};
+
+const getUserName = (user: LegacyUserRecord | null | undefined) => {
+  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
+  return fullName || 'No name';
 };
 
 type LegacyPetRecord = {
@@ -149,6 +155,20 @@ export async function DELETE(request: Request, context: RouteContext) {
     }
 
     const { userId } = await context.params;
+    const userResponse = await fetch(
+      `${firebaseConfig.databaseURL}/users/${encodeURIComponent(userId)}.json?auth=${encodeURIComponent(authContext.idToken)}`,
+      { cache: 'no-store' }
+    );
+
+    if (!userResponse.ok) {
+      return Response.json({ error: 'Failed to load user before deletion.' }, { status: userResponse.status });
+    }
+
+    const userRecord = (await userResponse.json()) as LegacyUserRecord | null;
+    if (!userRecord) {
+      return Response.json({ error: 'User not found.' }, { status: 404 });
+    }
+
     const response = await fetch(
       `${firebaseConfig.databaseURL}/users/${encodeURIComponent(userId)}.json?auth=${encodeURIComponent(authContext.idToken)}`,
       {
@@ -160,6 +180,30 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!response.ok) {
       return Response.json({ error: 'Failed to delete user.' }, { status: response.status });
     }
+
+    await createActivityLog({
+      session: authContext.session,
+      idToken: authContext.idToken,
+      log: {
+        action: 'deleted_user',
+        module: 'users',
+        subject: {
+          type: 'user',
+          id: userId,
+          name: getUserName(userRecord),
+        },
+        target: {
+          type: 'user',
+          id: userId,
+          name: getUserName(userRecord),
+        },
+        description: `${authContext.session.name || authContext.session.email} directly deleted user ${getUserName(userRecord)}.`,
+        metadata: {
+          email: userRecord.email,
+          contactNumber: userRecord.contactNumber,
+        },
+      },
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

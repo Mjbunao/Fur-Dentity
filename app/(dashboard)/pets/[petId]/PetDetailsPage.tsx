@@ -8,14 +8,14 @@ import {
   Button,
   Chip,
   CircularProgress,
-  Paper,
   Stack,
   Typography,
 } from '@mui/material';
 import type { AdminRole } from '@/lib/auth/types';
 import { auth } from '@/lib/firebase';
-import { ArrowBackRoundedIcon, DeleteOutlineIcon } from '@/components/icons';
+import { DeleteOutlineIcon } from '@/components/icons';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import { DetailCard, DetailInfoRow, DetailPageHeader } from '@/components/DetailPageScaffold';
 
 type PetDetails = {
   pet: {
@@ -134,33 +134,26 @@ export default function PetDetailsPage({
     }
   };
 
+  const petRows = details
+    ? [
+        ['Type', details.pet.type],
+        ['Breed', details.pet.breed],
+        ['Birthdate', details.pet.birthdate],
+        ['Owner', details.pet.owner],
+        ['Address', details.pet.address],
+        ['Contact', details.pet.contact],
+      ]
+    : [];
+
   return (
     <Stack spacing={2.5}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'flex-start' }}
-        spacing={1.5}
-      >
-        <Box>
-          <Button
-            variant="text"
-            onClick={() => router.push('/pets')}
-            startIcon={<ArrowBackRoundedIcon fontSize="small" />}
-            sx={{ mb: 1.5, px: 0.5 }}
-          >
-            Back to pets
-          </Button>
-
-          <Typography variant="h5" fontWeight={700}>
-            Pet Information
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Review this pet&apos;s profile information together with the owner details from the mobile app.
-          </Typography>
-        </Box>
-
-        {canDelete ? (
+      <DetailPageHeader
+        title="Pet Information"
+        description="Review this pet's profile information together with the owner details from the mobile app."
+        backLabel="Back to pets"
+        onBack={() => router.push('/pets')}
+        action={
+          canDelete ? (
           <Button
             color="error"
             variant="outlined"
@@ -172,40 +165,25 @@ export default function PetDetailsPage({
           >
             Delete
           </Button>
-        ) : null}
-      </Stack>
+          ) : null
+        }
+      />
 
       {loading ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: 4,
-            border: '1px solid',
-            borderColor: 'grey.200',
-          }}
-        >
+        <DetailCard>
           <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center">
             <CircularProgress size={24} />
             <Typography variant="body2" color="text.secondary">
               Loading pet details...
             </Typography>
           </Stack>
-        </Paper>
+        </DetailCard>
       ) : null}
 
       {!loading && error ? <Alert severity="error">{error}</Alert> : null}
 
       {!loading && details ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, md: 2.5 },
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: 'grey.200',
-          }}
-        >
+        <DetailCard>
           <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2.5}>
             <Stack spacing={2} sx={{ width: { xs: '100%', lg: 240 }, alignItems: { xs: 'center', lg: 'stretch' } }}>
               <Box
@@ -253,36 +231,13 @@ export default function PetDetailsPage({
               </Box>
 
               <Stack spacing={1}>
-                <Typography variant="body2" color="text.secondary">
-                  Type: {details.pet.type}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Breed: {details.pet.breed}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Birthdate: {details.pet.birthdate}
-                </Typography>
+                {petRows.map(([label, value]) => (
+                  <DetailInfoRow key={label} label={label} value={value} />
+                ))}
               </Stack>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-                  Owner Details
-                </Typography>
-                <Stack spacing={1}>
-                  <Typography variant="body2" color="text.secondary">
-                    Owner: {details.pet.owner}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Address: {details.pet.address}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Contact: {details.pet.contact}
-                  </Typography>
-                </Stack>
-              </Box>
             </Stack>
           </Stack>
-        </Paper>
+        </DetailCard>
       ) : null}
 
       <ConfirmDeleteDialog

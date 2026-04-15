@@ -1,6 +1,7 @@
 import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
+import { createActivityLog } from '@/lib/audit/activity-log';
 
 type DonationRecord = {
   donorType?: string;
@@ -152,6 +153,31 @@ export async function POST(request: Request) {
     if (!data.name) {
       return Response.json({ error: 'Donation key was not created.' }, { status: 500 });
     }
+
+    await createActivityLog({
+      session,
+      idToken,
+      log: {
+        action: 'created_donation',
+        module: 'donation',
+        subject: {
+          type: donationPayload.donorType === 'Registered User' ? 'user' : 'donor',
+          id: donationPayload.userId,
+          name: donationPayload.name,
+        },
+        target: {
+          type: 'donation',
+          id: data.name,
+          name: `Donation by ${donationPayload.name}`,
+        },
+        description: `${session.name || session.email} created a donation record for ${donationPayload.name} worth PHP ${Number(donationPayload.amount).toLocaleString()}.`,
+        metadata: {
+          amount: donationPayload.amount,
+          platform: donationPayload.platform,
+          donorType: donationPayload.donorType,
+        },
+      },
+    });
 
     return Response.json({ donation: normalizeDonation(data.name, donationPayload, null) });
   } catch (error) {
