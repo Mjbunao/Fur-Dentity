@@ -9,6 +9,7 @@ import {
   type UserRecord,
 } from '../../utils';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { createAdminNotification } from '@/lib/notifications/admin-notification';
 
 type RouteContext = {
   params: Promise<{
@@ -121,6 +122,29 @@ export async function PATCH(request: Request, context: RouteContext) {
           },
         },
       });
+
+      await createAdminNotification({
+        uid: requestRecord.requestedByUid,
+        idToken: verified.idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: 'Your report delete request was approved',
+          description: `${verified.session.name || verified.session.email} approved your delete request for ${petName}.`,
+          href: '/reports',
+        },
+      });
+
+      await createAdminNotification({
+        uid: verified.session.uid,
+        idToken: verified.idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: `${requestRecord.requestedByName || 'System Admin'} requested report deletion`,
+          description: `${petName} - Request approved`,
+          href: '/reports',
+          read: true,
+        },
+      });
     } else {
       const resetStatusResponse = await fetch(
         `${databaseUrl}/tickets/${decoded.mainDir}/${decoded.subDir}/${decoded.reportId}.json?auth=${encodeURIComponent(verified.idToken)}`,
@@ -163,6 +187,29 @@ export async function PATCH(request: Request, context: RouteContext) {
             reportType,
             petName,
           },
+        },
+      });
+
+      await createAdminNotification({
+        uid: requestRecord.requestedByUid,
+        idToken: verified.idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: 'Your report delete request was rejected',
+          description: `${verified.session.name || verified.session.email} rejected your delete request for ${petName}.`,
+          href: `/reports/${requestRecord.reportKey}`,
+        },
+      });
+
+      await createAdminNotification({
+        uid: verified.session.uid,
+        idToken: verified.idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: `${requestRecord.requestedByName || 'System Admin'} requested report deletion`,
+          description: `${petName} - Request rejected`,
+          href: `/reports/${requestRecord.reportKey}`,
+          read: true,
         },
       });
     }

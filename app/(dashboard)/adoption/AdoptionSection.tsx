@@ -53,8 +53,7 @@ const headCells: Array<{ id: SortKey; label: string; numeric?: boolean }> = [
 
 const tableContainerSx = {
   borderRadius: 2.5,
-  border: '1px solid',
-  borderColor: 'grey.200',
+  boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)',
   maxHeight: 520,
 };
 
@@ -316,14 +315,13 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
   };
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2}>
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, md: 2.5 },
+          p: { xs: 1.5, md: 2 },
           borderRadius: 2.5,
-          border: '1px solid',
-          borderColor: 'grey.200',
+          boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
         }}
       >
       <Stack
@@ -331,14 +329,14 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
         spacing={1.5}
         justifyContent="space-between"
         alignItems={{ xs: 'stretch', lg: 'center' }}
-        sx={{ mb: 2.25 }}
+        sx={{ mb: 1.5 }}
       >
         <Box>
           <Typography variant="h6" fontWeight={700}>
             Adoption Directory
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Manage shelter pets, adoption requests, and completed adoptions from one server-backed view.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Manage adoptable pets, pending adoption requests, and completed adoptions.
           </Typography>
         </Box>
 
@@ -374,7 +372,7 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
           setActiveTab(nextValue);
           setPage(0);
         }}
-        sx={{ mb: 2 }}
+        sx={{ mb: 1.25 }}
       >
         <Tab value="shelter" label={`Shelter Pets (${shelterRows.length})`} />
         <Tab value="adopted" label={`Adopted Pets (${adoptedRows.length})`} />

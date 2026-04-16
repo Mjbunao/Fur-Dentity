@@ -25,3 +25,4 @@ export {default as RequestPageRoundedIcon} from '@mui/icons-material/RequestPage
 export {default as CheckCircleRoundedIcon} from '@mui/icons-material/CheckCircleRounded';
 export {default as DoNotDisturbOnRoundedIcon} from '@mui/icons-material/DoNotDisturbOnRounded';
 export {default as HistoryRoundedIcon} from '@mui/icons-material/HistoryRounded';
+export {default as NotificationsRoundedIcon} from '@mui/icons-material/NotificationsRounded';

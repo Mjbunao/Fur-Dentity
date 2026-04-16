@@ -2,6 +2,7 @@ import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { createAdminNotification } from '@/lib/notifications/admin-notification';
 
 type RouteContext = {
   params: Promise<{
@@ -119,6 +120,29 @@ export async function PATCH(request: Request, context: RouteContext) {
           },
         },
       });
+
+      await createAdminNotification({
+        uid: requestRecord.requestedByUid,
+        idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: 'Your donation delete request was approved',
+          description: `${session.name || session.email} approved your delete request for ${donorName}'s donation record.`,
+          href: '/donation',
+        },
+      });
+
+      await createAdminNotification({
+        uid: session.uid,
+        idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: `${requestRecord.requestedByName || 'System Admin'} requested donation deletion`,
+          description: `${requestRecord.donationName || donorName || 'Unknown donation'} - Request approved`,
+          href: '/donation',
+          read: true,
+        },
+      });
     } else {
       const resetDonationStatusResponse = await fetch(
         `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}.json?auth=${encodeURIComponent(idToken)}`,
@@ -161,6 +185,29 @@ export async function PATCH(request: Request, context: RouteContext) {
             amount: donationRecord?.amount,
             platform: donationRecord?.platform,
           },
+        },
+      });
+
+      await createAdminNotification({
+        uid: requestRecord.requestedByUid,
+        idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: 'Your donation delete request was rejected',
+          description: `${session.name || session.email} rejected your delete request for ${donorName}'s donation record.`,
+          href: `/donation/${encodeURIComponent(requestRecord.donationId)}`,
+        },
+      });
+
+      await createAdminNotification({
+        uid: session.uid,
+        idToken,
+        notification: {
+          type: 'delete_request_resolved',
+          title: `${requestRecord.requestedByName || 'System Admin'} requested donation deletion`,
+          description: `${requestRecord.donationName || donorName || 'Unknown donation'} - Request rejected`,
+          href: `/donation/${encodeURIComponent(requestRecord.donationId)}`,
+          read: true,
         },
       });
     }

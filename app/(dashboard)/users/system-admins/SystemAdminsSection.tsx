@@ -8,7 +8,7 @@ export default function SystemAdminsSection() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <SystemAdminsTable refreshKey={refreshKey} />
       <CreateSystemAdminDialog
         canManageAdmins

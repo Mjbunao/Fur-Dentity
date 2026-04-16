@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${montserrat.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className={`${montserrat.className} min-h-full flex flex-col`}>
         <ThemeRegistry>{children}</ThemeRegistry>
       </body>
     </html>

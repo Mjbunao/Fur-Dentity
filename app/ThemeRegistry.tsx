@@ -11,6 +11,7 @@ const WARNING_COLOR = '#F3A531';
 const BACKGROUND_COLOR = '#f6f2ea';
 const FOREGROUND_COLOR = '#1f2937';
 const DIALOG_RADIUS = 12;
+const FONT_FAMILY = 'var(--font-montserrat), sans-serif';
 
 const theme = createTheme({
   palette: {
@@ -30,7 +31,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: 'var(--font-montserrat), Arial, Helvetica, sans-serif',
+    fontFamily: FONT_FAMILY,
     button: {
       textTransform: 'none',
       fontWeight: 600,
@@ -43,9 +44,23 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          fontFamily: 'var(--font-montserrat), Arial, Helvetica, sans-serif',
+          fontFamily: FONT_FAMILY,
           backgroundColor: BACKGROUND_COLOR,
           color: FOREGROUND_COLOR,
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          fontFamily: FONT_FAMILY,
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          fontFamily: FONT_FAMILY,
         },
       },
     },
@@ -68,6 +83,10 @@ const theme = createTheme({
         root: {
           borderRadius: 14,
         },
+        input: {
+          paddingTop: 8,
+          paddingBottom: 8,
+        },
       },
     },
     MuiButton: {
@@ -77,6 +96,25 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 10,
+          paddingTop: 5,
+          paddingBottom: 5,
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        sizeSmall: {
+          paddingTop: 7,
+          paddingBottom: 7,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: 36,
+          paddingTop: 6,
+          paddingBottom: 6,
         },
       },
     },

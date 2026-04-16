@@ -27,15 +27,15 @@ export function DetailPageHeader({
           variant="text"
           onClick={onBack}
           startIcon={<ArrowBackRoundedIcon fontSize="small" />}
-          sx={{ mb: 1.5, px: 0.5 }}
+          sx={{ mb: 1, px: 0.5 }}
         >
           {backLabel}
         </Button>
 
-        <Typography variant="h5" fontWeight={700}>
+        <Typography variant="h6" fontWeight={700}>
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {description}
         </Typography>
       </Box>
@@ -50,10 +50,9 @@ export function DetailCard({ children }: { children: ReactNode }) {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 2.5 },
+        p: { xs: 1.5, md: 2 },
         borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'grey.200',
+        boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
       }}
     >
       {children}
@@ -68,7 +67,7 @@ export function DetailInfoRow({ label, value }: { label: string; value: ReactNod
       spacing={0.75}
       justifyContent="space-between"
       sx={{
-        py: 1,
+        py: 0.75,
         borderBottom: '1px solid',
         borderColor: 'grey.100',
       }}

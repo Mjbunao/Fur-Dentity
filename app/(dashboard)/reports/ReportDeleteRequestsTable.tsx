@@ -111,24 +111,23 @@ export default function ReportDeleteRequestsTable({
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 2.5 },
+        p: { xs: 1.5, md: 2 },
         borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'grey.200',
+        boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
       }}
     >
-      <Box sx={{ mb: 2.25 }}>
+      <Box sx={{ mb: 1.5 }}>
         <Typography variant="h6" fontWeight={700}>
           Report Delete Requests
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-          Review pending report delete requests submitted by system admins.
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Approve or reject system-admin requests to remove report records.
         </Typography>
       </Box>
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
-      <TableContainer sx={{ borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200' }}>
+      <TableContainer sx={{ borderRadius: 2.5, boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)' }}>
         <Table size="small" sx={{ tableLayout: 'fixed' }}>
           <TableHead>
             <TableRow>
@@ -164,7 +163,7 @@ export default function ReportDeleteRequestsTable({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4}>
+                <TableCell colSpan={5}>
                   <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center" py={5}>
                     <CircularProgress size={20} />
                     <Typography variant="body2" color="text.secondary">
@@ -177,7 +176,7 @@ export default function ReportDeleteRequestsTable({
 
             {!loading && rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4}>
+                <TableCell colSpan={5}>
                   <Box py={5} textAlign="center">
                     <Typography variant="subtitle1" fontWeight={700}>
                       No pending requests

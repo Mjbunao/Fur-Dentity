@@ -67,24 +67,23 @@ export default function AdoptionDeleteRequestsTable({
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 2.5 },
+        p: { xs: 1.5, md: 2 },
         borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'grey.200',
+        boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
       }}
     >
-      <Box sx={{ mb: 2.25 }}>
+      <Box sx={{ mb: 1.5 }}>
         <Typography variant="h6" fontWeight={700}>
           Adoption Delete Requests
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-          Review pending adoption delete requests submitted by system admins.
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Approve or reject system-admin requests to remove adoption records.
         </Typography>
       </Box>
 
       {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
-      <TableContainer sx={{ borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200' }}>
+      <TableContainer sx={{ borderRadius: 2.5, boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)' }}>
         <Table size="small">
           <TableHead>
             <TableRow>

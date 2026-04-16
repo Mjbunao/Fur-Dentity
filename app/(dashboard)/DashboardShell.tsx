@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { auth, signOut } from '@/lib/firebase';
 import type { AdminRole } from '@/lib/auth/types';
+import NotificationsDropdown from './NotificationsDropdown';
 
 import { AdminPanelSettingsIcon, BadgeIcon, DashboardIcon, ExpandMoreRoundedIcon, ReportProblemRoundedIcon, PetsSharpIcon, MonetizationOnSharpIcon,PeopleAltSharpIcon,HealthAndSafetySharpIcon,GpsFixedSharpIcon, HistoryRoundedIcon } from '@/components/icons';
 
@@ -149,9 +150,9 @@ export default function DashboardShell({
     navItems.find((item) => item.href === pathname);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-slate-100 text-slate-900">
       <div className="flex min-h-screen flex-col md:flex-row">
-        <aside className="w-full border-b border-slate-200 bg-white md:sticky md:top-0 md:h-screen md:w-60 md:border-b-0 md:border-r">
+        <aside className="w-full bg-white shadow-[8px_0_28px_rgba(15,23,42,0.05)] md:sticky md:top-0 md:h-screen md:w-60">
           <div className="flex justify-center px-6 py-5">
             <div className="flex items-center gap-3">
               <Image
@@ -288,8 +289,8 @@ export default function DashboardShell({
           </nav>
         </aside>
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col bg-slate-100">
+          <header className="sticky top-0 z-30 bg-white/95 shadow-[0_10px_28px_rgba(15,23,42,0.06)] backdrop-blur">
             <div className="flex items-center justify-between px-6 py-2 md:px-10 ">
               <div>
           
@@ -299,7 +300,15 @@ export default function DashboardShell({
               </div>
 
               <div ref={menuRef} className="flex items-center gap-3">
-                <div className="relative">
+                <NotificationsDropdown
+                  isOpen={isNotifOpen}
+                  onToggle={() => {
+                    setIsNotifOpen((prev) => !prev);
+                    setIsProfileOpen(false);
+                  }}
+                  onClose={() => setIsNotifOpen(false)}
+                />
+                {false ? <div className="hidden">
                   <button
                     type="button"
                     onClick={() => {
@@ -343,7 +352,7 @@ export default function DashboardShell({
                       </div>
                     </div>
                   )}
-                </div>
+                </div> : null}
 
                 <div className="relative">
                   <button
@@ -352,7 +361,7 @@ export default function DashboardShell({
                       setIsProfileOpen((prev) => !prev);
                       setIsNotifOpen(false);
                     }}
-                    className="flex items-center gap-3 rounded-[10px] border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                    className="flex items-center gap-3 rounded-[10px] bg-transparent py-1.5 pl-1.5 pr-3 transition hover:bg-slate-100"
                   >
                     <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-200">
                       <Image
@@ -376,7 +385,7 @@ export default function DashboardShell({
                   </button>
 
                   {isProfileOpen && (
-                    <div className="absolute right-0 mt-3 w-56 rounded-3xl border border-slate-200 bg-white p-2 shadow-xl">
+                    <div className="absolute right-0 mt-3 w-56 rounded-3xl bg-white p-2 shadow-xl">
                       <button
                         type="button"
                         className="flex w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
@@ -397,7 +406,7 @@ export default function DashboardShell({
             </div>
           </header>
 
-          <main className="flex-1 p-6 md:p-10">{children}</main>
+          <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </div>

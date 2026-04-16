@@ -1,5 +1,6 @@
 import { databaseUrl, requireVerifiedAdmin, type AdoptionDeleteRequestRecord } from '../../utils';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { createAdminNotification } from '@/lib/notifications/admin-notification';
 
 type RouteContext = {
   params: Promise<{
@@ -112,6 +113,41 @@ export async function PATCH(request: Request, context: RouteContext) {
           petStatus: requestRecord.petStatus,
           requestedByEmail: requestRecord.requestedByEmail,
         },
+      },
+    });
+
+    await createAdminNotification({
+      uid: requestRecord.requestedByUid,
+      idToken: verified.idToken,
+      notification: {
+        type: 'delete_request_resolved',
+        title:
+          action === 'approve'
+            ? 'Your adoption delete request was approved'
+            : 'Your adoption delete request was rejected',
+        description:
+          action === 'approve'
+            ? `${verified.session.name || verified.session.email} approved your delete request for ${requestRecord.petName || 'Unknown pet'}.`
+            : `${verified.session.name || verified.session.email} rejected your delete request for ${requestRecord.petName || 'Unknown pet'}.`,
+        href:
+          action === 'approve'
+            ? '/adoption'
+            : `/adoption/${encodeURIComponent(requestRecord.petId)}`,
+        read: true,
+      },
+    });
+
+    await createAdminNotification({
+      uid: verified.session.uid,
+      idToken: verified.idToken,
+      notification: {
+        type: 'delete_request_resolved',
+        title: `${requestRecord.requestedByName || 'System Admin'} requested adoption deletion`,
+        description: `${requestRecord.petName || 'Unknown pet'} - Request ${action === 'approve' ? 'approved' : 'rejected'}`,
+        href:
+          action === 'approve'
+            ? '/adoption'
+            : `/adoption/${encodeURIComponent(requestRecord.petId)}`,
       },
     });
 

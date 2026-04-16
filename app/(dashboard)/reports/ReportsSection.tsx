@@ -277,14 +277,13 @@ export default function ReportsSection({ adminRole }: { adminRole: AdminRole }) 
   };
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2}>
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, md: 2.5 },
+          p: { xs: 1.5, md: 2 },
           borderRadius: 2.5,
-          border: '1px solid',
-          borderColor: 'grey.200',
+          boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
         }}
       >
         <Stack
@@ -292,16 +291,16 @@ export default function ReportsSection({ adminRole }: { adminRole: AdminRole }) 
           spacing={1.5}
           justifyContent="space-between"
           alignItems={{ xs: 'stretch', lg: 'center' }}
-          sx={{ mb: 2.25 }}
+          sx={{ mb: 1.5 }}
         >
           <Box>
             <Typography variant="h6" fontWeight={700}>
               Report Directory
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-              Monitor missing/found pet reports, status progress, and possible matched reports.
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Review missing and found pet reports, update status, and inspect possible matches.
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
               Reports this month: {totalMonthlyReports}
             </Typography>
           </Box>
@@ -365,7 +364,7 @@ export default function ReportsSection({ adminRole }: { adminRole: AdminRole }) 
             setActiveTab(nextValue);
             setPage(0);
           }}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1.25 }}
         >
           <Tab value="processing" label={`Processing (${rows.filter((row) => row.status !== 'Finished').length})`} />
           <Tab value="finished" label={`Finished (${rows.filter((row) => row.status === 'Finished').length})`} />
@@ -374,7 +373,7 @@ export default function ReportsSection({ adminRole }: { adminRole: AdminRole }) 
         {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
         {message ? <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert> : null}
 
-        <TableContainer sx={{ borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200', maxHeight: 520 }}>
+        <TableContainer sx={{ borderRadius: 2.5, boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)', maxHeight: 520 }}>
           <Table stickyHeader size="small" sx={{ tableLayout: 'fixed' }}>
             <TableHead>
               <TableRow>
@@ -517,18 +516,17 @@ export default function ReportsSection({ adminRole }: { adminRole: AdminRole }) 
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, md: 2.5 },
+          p: { xs: 1.5, md: 2 },
           borderRadius: 2.5,
-          border: '1px solid',
-          borderColor: 'grey.200',
+          boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
         }}
       >
-        <Box sx={{ mb: 2.25 }}>
+        <Box sx={{ mb: 1.5 }}>
           <Typography variant="h6" fontWeight={700}>
             Match Reports
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Possible matches are detected when missing and found reports share the same registered pet ID.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Review reports that may refer to the same registered pet.
           </Typography>
         </Box>
 

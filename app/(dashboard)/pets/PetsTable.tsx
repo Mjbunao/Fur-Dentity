@@ -48,8 +48,7 @@ const headCells: Array<{ id: SortKey; label: string }> = [
 
 const tableContainerSx = {
   borderRadius: 2.5,
-  border: '1px solid',
-  borderColor: 'grey.200',
+  boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)',
 };
 
 export default function PetsTable(props: { adminRole: AdminRole }) {
@@ -143,10 +142,9 @@ export default function PetsTable(props: { adminRole: AdminRole }) {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 2.5 },
+        p: { xs: 1.5, md: 2 },
         borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'grey.200',
+        boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
       }}
     >
       <Stack
@@ -154,14 +152,14 @@ export default function PetsTable(props: { adminRole: AdminRole }) {
         spacing={1.5}
         justifyContent="space-between"
         alignItems={{ xs: 'stretch', md: 'center' }}
-        sx={{ mb: 2.25 }}
+        sx={{ mb: 1.5 }}
       >
         <Box>
           <Typography variant="h6" fontWeight={700} color="text.primary">
             Pet Directory
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Review registered pets, their owner details, and their basic profile information from the mobile app.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Browse registered pets and open each record to review owner and profile details.
           </Typography>
         </Box>
 

@@ -90,8 +90,7 @@ const ellipsisSx = {
 
 const tableContainerSx = {
   borderRadius: 2.5,
-  border: '1px solid',
-  borderColor: 'grey.200',
+  boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)',
   maxHeight: 560,
 };
 
@@ -191,10 +190,9 @@ export default function ActivityLogsSection() {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 2.5 },
+        p: { xs: 1.5, md: 2 },
         borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'grey.200',
+        boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
       }}
     >
       <Stack
@@ -202,14 +200,14 @@ export default function ActivityLogsSection() {
         spacing={1.5}
         justifyContent="space-between"
         alignItems={{ xs: 'stretch', lg: 'center' }}
-        sx={{ mb: 2.25 }}
+        sx={{ mb: 1.5 }}
       >
         <Box>
           <Typography variant="h6" fontWeight={700}>
             Activity Logs
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-            Super-admin audit table for important admin actions across the system.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Audit admin login, update, approval, rejection, and deletion activity.
           </Typography>
         </Box>
 

@@ -321,14 +321,13 @@ export default function DonationSection({
   };
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={2}>
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, md: 2.5 },
+          p: { xs: 1.5, md: 2 },
           borderRadius: 2.5,
-          border: '1px solid',
-          borderColor: 'grey.200',
+          boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
         }}
       >
         <Stack
@@ -336,14 +335,14 @@ export default function DonationSection({
           spacing={1.5}
           justifyContent="space-between"
           alignItems={{ xs: 'stretch', lg: 'center' }}
-          sx={{ mb: 2.25 }}
+          sx={{ mb: 1.5 }}
         >
           <Box>
             <Typography variant="h6" fontWeight={700}>
               Donation Directory
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-              Monitor donation records, update donation details, and manage delete requests using the approved admin workflow.
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Track donor payments, update donation details, and review delete requests.
             </Typography>
           </Box>
 
@@ -388,7 +387,7 @@ export default function DonationSection({
         {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
         {message ? <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert> : null}
 
-        <TableContainer sx={{ borderRadius: 2.5, border: '1px solid', borderColor: 'grey.200', maxHeight: 520 }}>
+        <TableContainer sx={{ borderRadius: 2.5, boxShadow: '0 10px 24px rgba(15, 23, 42, 0.06)', maxHeight: 520 }}>
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>

@@ -313,3 +313,74 @@ Next:
   - users/pets details-page delete
 - Continue migrating remaining legacy dashboard sections feature-by-feature.
 - Keep all privileged mutations server-verified and activity-logged when they change important records.
+
+### 2026-04-16
+
+Done:
+
+- Migrated the dashboard overview into the Next.js dashboard with server-backed summary data.
+- Added dashboard metric cards for users, pets, shelter/adopted pets, monthly reports, adoption requests, and monthly donations.
+- Added dashboard chart-style summaries without an external chart library:
+  - missing vs found reports by month
+  - adopted pets by month
+  - donation amount by month
+- Added role-aware dashboard queue cards:
+  - `super_admin` sees pending delete requests needing review.
+  - `system_admin` sees their own pending delete requests.
+- Fixed the dashboard total users card link so it opens the user list instead of being treated like a user-details route.
+- Replaced the Adoption Requests dashboard icon with `PetsSharpIcon` because it better communicates pet/adoption activity.
+- Migrated admin notifications into the dashboard header:
+  - notification bell dropdown
+  - unread badge
+  - all/unread filter
+  - mark read and clear actions
+  - clickable notifications that open the related page
+  - polling refresh so notifications update without a full browser refresh
+- Added notification state persistence under the admin account so read/unread status is not reset when using another browser.
+- Added notification support for delete request approval/rejection outcomes so system admins can see whether their request was approved or rejected.
+- Adjusted super-admin notification behavior so approving/rejecting a request keeps the original notification context instead of replacing it with a different message or re-highlighting it.
+- Refined notification UI:
+  - smaller filter/action buttons
+  - larger notification heading area
+  - borderless bell/profile surfaces
+  - compact dropdown layout
+- Updated dashboard and page surfaces from border-heavy containers to shadow-based cards.
+- Changed the dashboard workspace background to `bg-slate-100` so white cards stand out from the page.
+- Removed visible shell borders from the sidebar and sticky header, replacing them with subtle shadows.
+- Converted table containers and pending dashboard queue cards away from visible borders toward soft shadows/fills.
+- Made the overall admin UI more compact:
+  - reduced main content padding
+  - tightened card padding and section spacing
+  - reduced shared detail-card spacing
+  - reduced MUI input/button/table/tab vertical padding
+- Updated page descriptions to better match each module purpose:
+  - Users
+  - Pets
+  - System Admins
+  - Donation
+  - Adoption
+  - Reports
+  - Activity Logs
+  - Delete request review tables
+- Strengthened Montserrat usage across the project:
+  - body now receives the actual Montserrat class
+  - Tailwind `--font-sans` maps to `--font-montserrat`
+  - MUI Typography and InputBase are explicitly set to the Montserrat font family
+- Fixed the Report Delete Requests empty/loading state alignment by using the correct table `colSpan`.
+- Verified the latest UI/style changes with `npx tsc --noEmit`.
+
+Current UI/UX rule:
+
+- Use compact page spacing by default.
+- Main page containers should feel raised with shadows instead of visible borders.
+- Sidebar/header surfaces should stay clean and mostly borderless.
+- Main data tables remain browse/search/sort surfaces; record-changing actions live in details pages.
+- Action/review tables can keep inline buttons when that table is specifically for approval/rejection or account management.
+- Montserrat is the required global font across Tailwind, MUI, and plain text.
+
+Next:
+
+- Browser-test the dashboard overview and notification behavior under both `super_admin` and `system_admin`.
+- Continue migrating remaining legacy dashboard sections feature-by-feature.
+- Keep all privileged mutations server-verified, activity-logged, and consistent with the delete-request cleanup rules.
+- Consider removing old commented/dead dashboard shell code later if it becomes noisy, but it is not blocking current runtime behavior.
