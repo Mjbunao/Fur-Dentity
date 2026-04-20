@@ -127,10 +127,14 @@ const cardSx = {
   p: 1.75,
   borderRadius: 2.5,
   boxShadow: '0 14px 32px rgba(15, 23, 42, 0.07)',
-  transition: 'transform 160ms ease, box-shadow 160ms ease',
+  translate: '0 0',
+  scale: 1,
+  transition: 'translate 180ms ease, scale 180ms ease, box-shadow 180ms ease',
+  willChange: 'translate, scale, box-shadow',
   '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 16px 35px rgba(15, 23, 42, 0.08)',
+    translate: '0 -7px',
+    scale: 1.015,
+    boxShadow: '0 22px 45px rgba(15, 23, 42, 0.16)',
   },
 };
 
@@ -147,6 +151,7 @@ const chartPaperSx = {
   borderRadius: 2.5,
   boxShadow: '0 18px 45px rgba(15, 23, 42, 0.08)',
   height: '100%',
+  animation: 'fd-fade-up 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards',
 };
 
 function MonthlySingleBarChart({
@@ -190,7 +195,13 @@ function MonthlySingleBarChart({
                   height: `${Math.max((value / maxValue) * 120, value > 0 ? 8 : 3)}px`,
                   borderRadius: '8px 8px 3px 3px',
                   bgcolor: value > 0 ? color : 'grey.200',
-                  transition: 'height 180ms ease',
+                  transformOrigin: 'bottom',
+                  animation: 'fd-fade-up 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards',
+                  animationDelay: `${160 + index * 55}ms`,
+                  transition: 'height 180ms ease, transform 160ms ease',
+                  '&:hover': {
+                    transform: 'scaleY(1.06)',
+                  },
                 }}
               />
               <Typography variant="caption" color="text.secondary">
@@ -248,6 +259,13 @@ function MissingFoundChart({
                     height: `${Math.max((missingValue / maxValue) * 120, missingValue > 0 ? 8 : 3)}px`,
                     borderRadius: '8px 8px 3px 3px',
                     bgcolor: missingValue > 0 ? 'primary.main' : 'grey.200',
+                    transformOrigin: 'bottom',
+                    animation: 'fd-fade-up 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards',
+                    animationDelay: `${160 + index * 55}ms`,
+                    transition: 'transform 160ms ease',
+                    '&:hover': {
+                      transform: 'scaleY(1.06)',
+                    },
                   }}
                 />
                 <Box
@@ -258,6 +276,13 @@ function MissingFoundChart({
                     height: `${Math.max((foundValue / maxValue) * 120, foundValue > 0 ? 8 : 3)}px`,
                     borderRadius: '8px 8px 3px 3px',
                     bgcolor: foundValue > 0 ? 'warning.main' : 'grey.200',
+                    transformOrigin: 'bottom',
+                    animation: 'fd-fade-up 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards',
+                    animationDelay: `${210 + index * 55}ms`,
+                    transition: 'transform 160ms ease',
+                    '&:hover': {
+                      transform: 'scaleY(1.06)',
+                    },
                   }}
                 />
               </Stack>
@@ -396,6 +421,7 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
       <Stack spacing={2}>
       <Paper
         elevation={0}
+        className="fd-animate-fade-up"
         sx={{
           p: { xs: 1.75, md: 2 },
           borderRadius: 2.5,
@@ -442,7 +468,7 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
       ) : (
         <>
           <Grid container spacing={1.5}>
-            {summaryCards.map((card) => {
+            {summaryCards.map((card, index) => {
               const Icon = card.icon;
 
               return (
@@ -451,11 +477,13 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
                     component={Link}
                     href={card.href}
                     elevation={0}
+                    className="fd-animate-fade-up"
                     sx={{
                       ...cardSx,
                       display: 'block',
                       color: 'text.primary',
                       textDecoration: 'none',
+                      animationDelay: `${120 + index * 90}ms`,
                     }}
                   >
                     <Stack direction="row" justifyContent="space-between" spacing={1.5}>
@@ -537,21 +565,31 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
                   </Box>
                 </Stack>
                 <Stack spacing={1}>
-                  {queueCards.map((queue) => (
+                  {queueCards.map((queue, index) => (
                     <Paper
                       key={queue.label}
                       component={Link}
                       href={queue.href}
                       elevation={0}
+                      className="fd-animate-fade-up"
                       sx={{
                         p: 1.25,
                         borderRadius: 2,
-                        bgcolor: 'grey.50',
+                        bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.78)' : 'grey.50'),
                         color: 'text.primary',
                         textDecoration: 'none',
+                        animationDelay: `${120 + index * 90}ms`,
+                        transition: 'background-color 160ms ease, box-shadow 160ms ease, translate 160ms ease',
                         '&:hover': {
-                          bgcolor: 'rgba(243, 165, 49, 0.08)',
-                          boxShadow: '0 10px 24px rgba(15, 23, 42, 0.07)',
+                          translate: '0 -2px',
+                          bgcolor: (theme) =>
+                            theme.palette.mode === 'dark'
+                              ? 'rgba(30, 41, 59, 0.92)'
+                              : 'rgba(241, 245, 249, 0.95)',
+                          boxShadow: (theme) =>
+                            theme.palette.mode === 'dark'
+                              ? '0 10px 24px rgba(0, 0, 0, 0.22)'
+                              : '0 10px 24px rgba(15, 23, 42, 0.07)',
                         },
                       }}
                     >
@@ -592,21 +630,32 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
 
                   {recentActivity.length > 0 ? (
                     <Stack spacing={1}>
-                      {recentActivity.map((activity) => (
+                      {recentActivity.map((activity, index) => (
                         <Paper
                           key={activity.id}
                           component={Link}
                           href={`/activity-logs/${activity.id}`}
                           elevation={0}
+                          className="fd-animate-fade-up"
                           sx={{
                             p: 1.25,
                             borderRadius: 2,
-                            bgcolor: 'grey.50',
+                            bgcolor: (theme) =>
+                              theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.78)' : 'grey.50',
                             color: 'text.primary',
                             textDecoration: 'none',
+                            animationDelay: `${120 + index * 90}ms`,
+                            transition: 'background-color 160ms ease, box-shadow 160ms ease, translate 160ms ease',
                             '&:hover': {
-                              bgcolor: 'rgba(0, 84, 255, 0.06)',
-                              boxShadow: '0 10px 24px rgba(15, 23, 42, 0.07)',
+                              translate: '0 -2px',
+                              bgcolor: (theme) =>
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(30, 41, 59, 0.92)'
+                                  : 'rgba(241, 245, 249, 0.95)',
+                              boxShadow: (theme) =>
+                                theme.palette.mode === 'dark'
+                                  ? '0 10px 24px rgba(0, 0, 0, 0.22)'
+                                  : '0 10px 24px rgba(15, 23, 42, 0.07)',
                             },
                           }}
                         >

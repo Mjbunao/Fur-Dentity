@@ -72,6 +72,10 @@ Refactor the legacy static/Firebase admin website into a Next.js app while keepi
   - `/users`
   - `/pets`
   - `/gps-devices`
+- Profile Settings routes/actions currently available:
+  - dark mode toggle
+  - `/activity-logs` for `super_admin`
+  - `/general-reports`
 - Placeholder pages exist for these routes.
 
 ## Environment Setup
@@ -384,3 +388,59 @@ Next:
 - Continue migrating remaining legacy dashboard sections feature-by-feature.
 - Keep all privileged mutations server-verified, activity-logged, and consistent with the delete-request cleanup rules.
 - Consider removing old commented/dead dashboard shell code later if it becomes noisy, but it is not blocking current runtime behavior.
+
+### 2026-04-20
+
+Done:
+
+- Added profile Settings refinements:
+  - removed the email from the profile dropdown
+  - moved Activity Logs under Settings
+  - added General Reports under Settings instead of the main sidebar
+  - added logout confirmation before signing out
+- Added dark mode support across the dashboard shell and major dashboard surfaces:
+  - sidebar
+  - sticky header
+  - profile dropdown
+  - notification dropdown
+  - dashboard queue/activity cards
+  - main content containers
+- Added motion polish across the admin UI:
+  - page-entry fade animations
+  - sidebar/nav entry animations
+  - notification dropdown/list animations
+  - dashboard card/chart hover and entry animations
+  - settings nested-menu animation
+- Added the General Reports feature:
+  - server-backed `/api/general-reports` route
+  - module selection for All, Users, Pets, Adoption, Donation, Reports, and Admin Activity
+  - current-month filtering for date-based records
+  - summary cards and detail tables
+  - pet type quantity reporting using the actual Firebase pet shape, including `petDetails.petType`
+  - adoption type totals, donation platform totals, report status totals, and recent admin activity output
+- Added a print-friendly General Reports output:
+  - print-only text report layout
+  - Fur-Dentity logo
+  - centered report header
+  - selected module type
+  - report snapshot table
+  - summary table
+  - detail tables
+  - standardized print table widths
+  - separate three-column print layout for admin activity
+  - hides sidebar, sticky header, buttons, shadows, and dashboard cards during print
+- Kept the on-screen General Reports UI separate from the print layout so the dashboard remains interactive while printed output reads like a formal document.
+- Verified the latest General Reports, print, settings, and shell changes with `npx tsc --noEmit`.
+
+Current UI/UX rule:
+
+- Utility/admin pages that are not primary day-to-day modules can live inside the profile Settings menu instead of the main sidebar.
+- Printed reports should use a document-style layout, not a screenshot of the web UI.
+- Keep print output readable with plain text, tables, the Fur-Dentity logo, module label, and consistent column widths.
+- Continue using dark-mode-aware styling for any new shell, dropdown, card, and table surfaces.
+
+Next:
+
+- Browser-test General Reports print preview for each module type.
+- Decide whether generated reports need export/download support later, or if browser print/PDF is enough for now.
+- Continue migrating remaining legacy dashboard sections feature-by-feature.

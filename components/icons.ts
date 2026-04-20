@@ -26,3 +26,8 @@ export {default as CheckCircleRoundedIcon} from '@mui/icons-material/CheckCircle
 export {default as DoNotDisturbOnRoundedIcon} from '@mui/icons-material/DoNotDisturbOnRounded';
 export {default as HistoryRoundedIcon} from '@mui/icons-material/HistoryRounded';
 export {default as NotificationsRoundedIcon} from '@mui/icons-material/NotificationsRounded';
+export {default as SettingsRoundedIcon} from '@mui/icons-material/SettingsRounded';
+export {default as DarkModeRoundedIcon} from '@mui/icons-material/DarkModeRounded';
+export {default as LightModeRoundedIcon} from '@mui/icons-material/LightModeRounded';
+export {default as LogoutRoundedIcon} from '@mui/icons-material/LogoutRounded';
+export {default as AssessmentRoundedIcon} from '@mui/icons-material/AssessmentRounded';

@@ -10,12 +10,19 @@ const PRIMARY_COLOR = '#0054FF';
 const WARNING_COLOR = '#F3A531';
 const BACKGROUND_COLOR = '#f6f2ea';
 const FOREGROUND_COLOR = '#1f2937';
+const DARK_BACKGROUND_COLOR = '#111827';
+const DARK_PAPER_COLOR = '#1f2937';
+const DARK_FOREGROUND_COLOR = '#e5e7eb';
 const DIALOG_RADIUS = 12;
 const FONT_FAMILY = 'var(--font-montserrat), sans-serif';
+const THEME_STORAGE_KEY = 'fur-dentity-theme';
 
-const theme = createTheme({
+type ThemeMode = 'light' | 'dark';
+
+const createAppTheme = (mode: ThemeMode) =>
+  createTheme({
   palette: {
-    mode: 'light',
+    mode,
     primary: {
       main: PRIMARY_COLOR,
     },
@@ -23,11 +30,11 @@ const theme = createTheme({
       main: WARNING_COLOR,
     },
     background: {
-      default: BACKGROUND_COLOR,
-      paper: '#ffffff',
+      default: mode === 'dark' ? DARK_BACKGROUND_COLOR : BACKGROUND_COLOR,
+      paper: mode === 'dark' ? DARK_PAPER_COLOR : '#ffffff',
     },
     text: {
-      primary: FOREGROUND_COLOR,
+      primary: mode === 'dark' ? DARK_FOREGROUND_COLOR : FOREGROUND_COLOR,
     },
   },
   typography: {
@@ -45,8 +52,8 @@ const theme = createTheme({
       styleOverrides: {
         body: {
           fontFamily: FONT_FAMILY,
-          backgroundColor: BACKGROUND_COLOR,
-          color: FOREGROUND_COLOR,
+          backgroundColor: mode === 'dark' ? DARK_BACKGROUND_COLOR : BACKGROUND_COLOR,
+          color: mode === 'dark' ? DARK_FOREGROUND_COLOR : FOREGROUND_COLOR,
         },
       },
     },
@@ -121,11 +128,32 @@ const theme = createTheme({
   },
 });
 
+const getStoredThemeMode = (): ThemeMode => {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  return window.localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+};
+
 export default function ThemeRegistry({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [mode, setMode] = React.useState<ThemeMode>('light');
+
+  React.useEffect(() => {
+    const syncTheme = () => setMode(getStoredThemeMode());
+
+    syncTheme();
+    window.addEventListener('fur-dentity-theme-change', syncTheme);
+
+    return () => window.removeEventListener('fur-dentity-theme-change', syncTheme);
+  }, []);
+
+  const theme = React.useMemo(() => createAppTheme(mode), [mode]);
+
   return (
     <CacheProvider value={cache}>
       <ThemeProvider theme={theme}>

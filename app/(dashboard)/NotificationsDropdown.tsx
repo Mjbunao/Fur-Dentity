@@ -18,6 +18,7 @@ type NotificationRow = {
 
 type NotificationsDropdownProps = {
   isOpen: boolean;
+  isDarkMode: boolean;
   onToggle: () => void;
   onClose: () => void;
 };
@@ -43,6 +44,7 @@ const formatDateTime = (value: string) => {
 
 export default function NotificationsDropdown({
   isOpen,
+  isDarkMode,
   onToggle,
   onClose,
 }: NotificationsDropdownProps) {
@@ -240,10 +242,12 @@ export default function NotificationsDropdown({
       <button
         type="button"
         onClick={onToggle}
-        className="relative flex h-11 w-11 items-center justify-center rounded-[10px] bg-transparent text-slate-700 transition hover:bg-slate-100"
+        className={`relative flex h-11 w-11 items-center justify-center rounded-[10px] bg-transparent transition ${
+          isDarkMode ? 'text-slate-100 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+        }`}
         aria-label="Open notifications"
       >
-        <NotificationsRoundedIcon sx={{ fontSize: 21 }} />
+        <NotificationsRoundedIcon sx={{ fontSize: 21 }} className={unreadCount > 0 ? 'fd-animate-soft-pulse' : ''} />
         {unreadCount > 0 ? (
           <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -252,24 +256,26 @@ export default function NotificationsDropdown({
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 mt-3 w-[320px] overflow-hidden rounded-[12px] bg-white shadow-xl">
-          <div className="flex items-center justify-between px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+        <div className={`fd-animate-scale-in absolute right-0 mt-3 w-[320px] overflow-hidden rounded-[12px] shadow-xl ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+          <div className={`flex items-center justify-between px-4 py-3 ${isDarkMode ? 'shadow-[0_8px_18px_rgba(0,0,0,0.18)]' : 'shadow-[0_8px_18px_rgba(15,23,42,0.04)]'}`}>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Notifications</h3>
-              <p className="text-xs text-slate-500">Reports and requests needing attention.</p>
+              <h3 className={`text-sm font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>Notifications</h3>
+              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Reports and requests needing attention.</p>
             </div>
-            <span className="rounded-[9px] bg-warning/20 px-2 py-1 text-[11px] font-semibold text-amber-900">
+            <span className={`rounded-[9px] bg-warning/20 px-2 py-1 text-[11px] font-semibold ${isDarkMode ? 'text-warning' : 'text-amber-900'}`}>
               {unreadCount} unread
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-1 px-2 py-1 shadow-[0_8px_18px_rgba(15,23,42,0.035)]">
-            <div className="flex w-fit rounded-[6px] bg-slate-100 p-[2px]">
+          <div className={`flex items-center justify-between gap-1 px-2 py-1 ${isDarkMode ? 'shadow-[0_8px_18px_rgba(0,0,0,0.16)]' : 'shadow-[0_8px_18px_rgba(15,23,42,0.035)]'}`}>
+            <div className={`flex w-fit rounded-[6px] p-[2px] ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
               <button
                 type="button"
                 onClick={() => setFilter('all')}
                 className={`rounded-[5px] px-1.5 py-0 text-[9px] font-semibold leading-4 transition ${
-                  filter === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'
+                  filter === 'all'
+                    ? `${isDarkMode ? 'bg-slate-700' : 'bg-white'} text-primary shadow-sm`
+                    : isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
                 All
@@ -278,7 +284,9 @@ export default function NotificationsDropdown({
                 type="button"
                 onClick={() => setFilter('unread')}
                 className={`rounded-[5px] px-1.5 py-0 text-[9px] font-semibold leading-4 transition ${
-                  filter === 'unread' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'
+                  filter === 'unread'
+                    ? `${isDarkMode ? 'bg-slate-700' : 'bg-white'} text-primary shadow-sm`
+                    : isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
                 Unread
@@ -289,7 +297,9 @@ export default function NotificationsDropdown({
                 type="button"
                 onClick={() => void handleMarkAllRead()}
                 disabled={saving || unreadCount === 0}
-                className="rounded-[5px] px-1 py-0 text-[9px] font-semibold leading-4 text-primary transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                className={`rounded-[5px] px-1 py-0 text-[9px] font-semibold leading-4 text-primary transition disabled:cursor-not-allowed ${
+                  isDarkMode ? 'hover:bg-blue-950/40 disabled:text-slate-600' : 'hover:bg-blue-50 disabled:text-slate-300'
+                }`}
               >
                 Read
               </button>
@@ -297,7 +307,11 @@ export default function NotificationsDropdown({
                 type="button"
                 onClick={() => void handleClearVisible()}
                 disabled={saving || visibleNotifications.length === 0}
-                className="rounded-[5px] px-1 py-0 text-[9px] font-semibold leading-4 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                className={`rounded-[5px] px-1 py-0 text-[9px] font-semibold leading-4 transition disabled:cursor-not-allowed ${
+                  isDarkMode
+                    ? 'text-red-400 hover:bg-red-950/40 disabled:text-slate-600'
+                    : 'text-red-600 hover:bg-red-50 disabled:text-slate-300'
+                }`}
               >
                 Clear
               </button>
@@ -306,46 +320,58 @@ export default function NotificationsDropdown({
 
           <div className="max-h-[330px] overflow-y-auto p-1.5">
             {loading ? (
-              <div className="rounded-[8px] bg-slate-50 p-3 text-xs text-slate-500">
+              <div className={`rounded-[8px] p-3 text-xs ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
                 Loading notifications...
               </div>
             ) : null}
 
             {error ? (
-              <div className="rounded-[8px] bg-red-50 p-2.5 text-xs text-red-700">
+              <div className={`rounded-[8px] p-2.5 text-xs ${isDarkMode ? 'bg-red-950/40 text-red-300' : 'bg-red-50 text-red-700'}`}>
                 {error}
               </div>
             ) : null}
 
             {!loading && !error && visibleNotifications.length === 0 ? (
-              <div className="rounded-[8px] bg-slate-50 p-3 text-xs text-slate-500">
+              <div className={`rounded-[8px] p-3 text-xs ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
                 {filter === 'unread' ? 'No unread notifications.' : 'No notifications yet.'}
               </div>
             ) : null}
 
             <div className="space-y-1">
-              {visibleNotifications.map((notification) => (
+              {visibleNotifications.map((notification, index) => (
                 <div
                   key={notification.id}
-                  className={`group flex items-start gap-1.5 rounded-[8px] p-2 transition hover:bg-slate-50 ${
-                    notification.read ? 'bg-white' : 'bg-blue-50/70'
+                  className={`group flex items-start gap-1.5 rounded-[8px] p-2 transition ${
+                    isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-50'
+                  } ${
+                    notification.read
+                      ? isDarkMode ? 'bg-slate-900' : 'bg-white'
+                      : isDarkMode ? 'bg-blue-950/35' : 'bg-blue-50/70'
                   }`}
+                  style={{
+                    animation: 'fd-fade-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                    animationDelay: `${80 + index * 60}ms`,
+                  }}
                 >
                   <button
                     type="button"
                     onClick={() => void handleOpenNotification(notification)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <p className={`text-xs text-slate-900 ${notification.read ? 'font-medium' : 'font-bold'}`}>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-100' : 'text-slate-900'} ${notification.read ? 'font-medium' : 'font-bold'}`}>
                       {notification.title}
                     </p>
-                    <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{notification.description}</p>
-                    <p className="mt-0.5 text-[10px] text-slate-400">{formatDateTime(notification.createdAt)}</p>
+                    <p className={`mt-0.5 text-[11px] leading-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{notification.description}</p>
+                    <p className={`mt-0.5 text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>{formatDateTime(notification.createdAt)}</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleDeleteNotification(notification.id)}
-                    className="mt-0.5 rounded-[8px] p-1 text-slate-400 opacity-80 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                    className={`mt-0.5 rounded-[8px] p-1 opacity-80 transition group-hover:opacity-100 ${
+                      isDarkMode
+                        ? 'text-slate-500 hover:bg-red-950/40 hover:text-red-300'
+                        : 'text-slate-400 hover:bg-red-50 hover:text-red-600'
+                    }`}
                     aria-label="Delete notification"
                   >
                     <DeleteOutlineIcon sx={{ fontSize: 16 }} />
