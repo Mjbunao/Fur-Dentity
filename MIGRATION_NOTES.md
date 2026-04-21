@@ -444,3 +444,59 @@ Next:
 - Browser-test General Reports print preview for each module type.
 - Decide whether generated reports need export/download support later, or if browser print/PDF is enough for now.
 - Continue migrating remaining legacy dashboard sections feature-by-feature.
+
+### 2026-04-21
+
+Done:
+
+- Continued refining the General Reports feature and its print/PDF output.
+- Updated the General Reports header actions so the buttons keep the same height as the small filter/search controls even when page descriptions wrap.
+- Renamed the print action to `Export PDF` while keeping the current browser print/PDF flow.
+- Added the login-page `SPN` logo beside the Fur-Dentity logo in the print report header.
+- Refined the print report header structure:
+  - logo stack at the top
+  - `Fur-Dentity Admin`
+  - `General Report`
+  - removed the duplicate module label from the print header and kept module information inside `Report Snapshot`
+- Standardized the print layout further:
+  - fixed two-column table widths for normal print tables
+  - kept a dedicated three-column width layout for `Recent Admin Activity`
+  - kept print output document-like instead of dashboard-like
+- Improved General Reports data:
+  - current-month report data remains the default for date-based modules
+  - added unique `Donators` counting for donation summaries
+  - surfaced `Shelter Pets` in the combined summary
+  - removed the redundant `Donation Records` summary card after switching to `Donators`
+- Tested and then rolled back user-gender and pet-gender reporting from the visible report UI after confirming the current Firebase user data does not reliably store gender.
+- Refined the `All Modules` summary logic:
+  - `All Modules` now includes the same high-level information covered by the individual module summaries
+  - later reorganized the summary into grouped module sections instead of a long list of separate cards
+- Reworked the General Reports summary presentation:
+  - grouped related metrics into one `Summary Overview` container
+  - arranged grouped sections in this order:
+    - `Users` / `Pets`
+    - `Adoption` / `Reports`
+    - `Donation` / `Admin Activity`
+  - removed the `Delete Requests` summary group from the grouped overview
+- Refined the General Reports visual language:
+  - lower report sections now use the same icon-and-accent header treatment as the summary area
+  - grouped child summary sections now use bordered panels
+  - the parent `Summary Overview` container keeps the raised/shadowed look
+  - removed colored heading text where it felt too strong
+  - tuned summary row typography/contrast so labels and values feel more balanced
+  - added module icons and accent colors to make the page feel more alive without over-styling the tables
+- Kept the details/print report tables and activity table server-backed and type-safe after each iteration.
+- Verified the latest General Reports refinements with `npx tsc --noEmit`.
+
+Current UI/UX rule:
+
+- In General Reports, use one grouped `Summary Overview` container instead of many disconnected top summary cards.
+- Child summary groups can use borders, icons, and light accent colors, while the parent summary container can stay raised.
+- Keep print/PDF output simpler than the interactive dashboard and avoid duplicating metadata that already appears in `Report Snapshot`.
+- Only show report metrics that are backed by real Firebase data; hide demographics such as user gender until the data actually exists.
+
+Next:
+
+- Browser-test the latest General Reports summary grouping and section styling on both light and dark themes.
+- Decide later whether to reintroduce user demographics once the mobile/user records store that data consistently.
+- Continue migrating remaining legacy dashboard sections feature-by-feature.

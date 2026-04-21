@@ -10,6 +10,9 @@ type DonationRecord = {
   amount?: number | string;
   date?: string;
   platform?: string;
+  name?: string;
+  email?: string;
+  userId?: string;
 };
 
 type TicketRecord = {
@@ -21,9 +24,11 @@ type TicketRecord = {
 type ShelterPetRecord = {
   type?: string;
   petType?: string;
+  gender?: string;
   petDetails?: {
     petType?: string;
     type?: string;
+    gender?: string;
   };
   breed?: string;
   request?: Record<string, unknown>;
@@ -32,9 +37,11 @@ type ShelterPetRecord = {
 type AdoptedPetRecord = {
   type?: string;
   petType?: string;
+  gender?: string;
   petDetails?: {
     petType?: string;
     type?: string;
+    gender?: string;
   };
   breed?: string;
   adoptedAt?: string;
@@ -141,6 +148,23 @@ const countBy = <T,>(rows: T[], selector: (row: T) => string | undefined) => {
 const sumDonations = (rows: DonationRecord[]) =>
   rows.reduce((total, donation) => total + Number(donation.amount || 0), 0);
 
+const getUniqueDonatorCount = (rows: DonationRecord[]) => {
+  const donors = new Set<string>();
+
+  for (const donation of rows) {
+    const key =
+      donation.userId?.trim() ||
+      donation.email?.trim().toLowerCase() ||
+      donation.name?.trim().toLowerCase();
+
+    if (key) {
+      donors.add(key);
+    }
+  }
+
+  return donors.size;
+};
+
 const formatMonthYear = (date: Date) =>
   new Intl.DateTimeFormat('en-US', {
     month: 'long',
@@ -175,6 +199,20 @@ const normalizePetType = (value: unknown) => {
   return 'Unknown';
 };
 
+const normalizeGender = (value: unknown) => {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized.includes('male')) {
+    return 'Male';
+  }
+
+  if (normalized.includes('female')) {
+    return 'Female';
+  }
+
+  return 'Unknown';
+};
+
 const getNestedValue = (record: UnknownRecord, path: string[]) => {
   let current: unknown = record;
 
@@ -202,6 +240,33 @@ const getPetType = (pet: unknown) => {
       getNestedValue(record, ['petDetails', 'type']) ||
       getNestedValue(record, ['basicInformation', 'petType']) ||
       getNestedValue(record, ['basicInformation', 'type'])
+  );
+};
+
+const getPetGender = (pet: unknown) => {
+  const record = asRecordMap(pet);
+
+  return normalizeGender(
+    record.gender ||
+      record.sex ||
+      getNestedValue(record, ['petDetails', 'gender']) ||
+      getNestedValue(record, ['basicInformation', 'gender']) ||
+      getNestedValue(record, ['basicInformation', 'sex'])
+  );
+};
+
+const getUserGender = (user: unknown) => {
+  const record = asRecordMap(user);
+
+  return normalizeGender(
+    record.gender ||
+      record.sex ||
+      getNestedValue(record, ['profile', 'gender']) ||
+      getNestedValue(record, ['profile', 'sex']) ||
+      getNestedValue(record, ['personalInformation', 'gender']) ||
+      getNestedValue(record, ['personalInformation', 'sex']) ||
+      getNestedValue(record, ['basicInformation', 'gender']) ||
+      getNestedValue(record, ['basicInformation', 'sex'])
   );
 };
 
@@ -298,6 +363,7 @@ export async function GET(request: Request) {
         shelterPets: shelterRows.length,
         adoptedPets: adoptedRows.length,
         donations: rangedDonations.length,
+        donators: getUniqueDonatorCount(rangedDonations),
         donationAmount: sumDonations(rangedDonations),
         reports: rangedReports.length,
         missingReports: rangedReports.filter((report) => report.reportType === 'missing').length,
@@ -313,6 +379,7 @@ export async function GET(request: Request) {
       sections: {
         users: {
           total: userRows.length,
+          byGender: countBy(userRows, getUserGender),
         },
         pets: {
           total: petRows.length,

@@ -328,7 +328,7 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
         direction={{ xs: 'column', lg: 'row' }}
         spacing={1.5}
         justifyContent="space-between"
-        alignItems={{ xs: 'stretch', lg: 'center' }}
+        alignItems={{ xs: 'stretch', lg: 'flex-start' }}
         sx={{ mb: 1.5 }}
       >
         <Box>
@@ -340,7 +340,7 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} alignItems={{ xs: 'stretch', sm: 'center' }}>
           <TextField
             value={search}
             onChange={(event) => {
@@ -359,7 +359,12 @@ export default function AdoptionSection({ adminRole, adminUid, adminName, adminE
             }}
           />
           {activeTab === 'shelter' ? (
-            <Button variant="contained" startIcon={<AddRoundedIcon sx={{ fontSize: 18 }} />} onClick={openCreateDialog}>
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon sx={{ fontSize: 18 }} />}
+              onClick={openCreateDialog}
+              sx={{ height: 40, whiteSpace: 'nowrap' }}
+            >
               Add pet
             </Button>
           ) : null}
