@@ -12,6 +12,7 @@ import {
   type UserRecord,
 } from '../utils';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -266,6 +267,12 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!reportRecord) {
       return Response.json({ error: 'Report not found.' }, { status: 404 });
     }
+
+    await archiveDeletedRecord({
+      idToken: verified.idToken,
+      path: `reports/${decoded.mainDir}/${decoded.subDir}/${decoded.reportId}`,
+      record: reportRecord as Record<string, unknown>,
+    });
 
     const response = await fetch(
       `${databaseUrl}/tickets/${decoded.mainDir}/${decoded.subDir}/${decoded.reportId}.json?auth=${encodeURIComponent(verified.idToken)}`,

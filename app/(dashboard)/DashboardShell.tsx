@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { auth, signOut } from '@/lib/firebase';
+import { auth, onAuthStateChanged, signOut } from '@/lib/firebase';
 import type { AdminRole } from '@/lib/auth/types';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import NotificationsDropdown from './NotificationsDropdown';
@@ -26,6 +26,7 @@ import {
   PeopleAltSharpIcon,
   PetsSharpIcon,
   ReportProblemRoundedIcon,
+  RestoreFromTrashRoundedIcon,
   SettingsRoundedIcon,
 } from '@/components/icons';
 
@@ -130,43 +131,59 @@ export default function DashboardShell({
   }, [pathname]);
 
   useEffect(() => {
-    const validateSession = async () => {
-      const currentUser = auth.currentUser;
+    let isCancelled = false;
 
-      if (!currentUser) {
-        await fetch('/api/session/logout', {
-          method: 'POST',
-        }).catch(() => undefined);
-        router.replace('/');
-        return;
-      }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      const validateSession = async () => {
+        if (!currentUser) {
+          await fetch('/api/session/logout', {
+            method: 'POST',
+          }).catch(() => undefined);
 
-      try {
-        const idToken = await currentUser.getIdToken(true);
-        const response = await fetch('/api/session/validate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-        });
+          if (!isCancelled) {
+            router.replace('/');
+          }
+          return;
+        }
 
-        if (!response.ok) {
+        try {
+          const idToken = await currentUser.getIdToken(true);
+          const response = await fetch('/api/session/validate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+          });
+
+          if (!response.ok) {
+            await signOut(auth).catch(() => undefined);
+            sessionStorage.clear();
+
+            if (!isCancelled) {
+              router.replace('/');
+            }
+          }
+        } catch {
+          await fetch('/api/session/logout', {
+            method: 'POST',
+          }).catch(() => undefined);
           await signOut(auth).catch(() => undefined);
           sessionStorage.clear();
-          router.replace('/');
-        }
-      } catch {
-        await fetch('/api/session/logout', {
-          method: 'POST',
-        }).catch(() => undefined);
-        await signOut(auth).catch(() => undefined);
-        sessionStorage.clear();
-        router.replace('/');
-      }
-    };
 
-    void validateSession();
+          if (!isCancelled) {
+            router.replace('/');
+          }
+        }
+      };
+
+      void validateSession();
+    });
+
+    return () => {
+      isCancelled = true;
+      unsubscribe();
+    };
   }, [router, pathname]);
 
   const handleLogout = async () => {
@@ -210,6 +227,8 @@ export default function DashboardShell({
     ? 'Activity Logs'
     : pathname.startsWith('/general-reports')
       ? 'General Reports'
+    : pathname.startsWith('/recovery')
+      ? 'Recovery'
     : currentNavItem?.label ?? 'Dashboard';
   const appShellClass = isDarkMode
     ? 'min-h-screen bg-slate-950 text-slate-100'
@@ -555,6 +574,19 @@ export default function DashboardShell({
                                 >
                                   <AssessmentRoundedIcon sx={{ fontSize: 16 }} />
                                   General Reports
+                                </Link>
+                                <Link
+                                  href="/recovery"
+                                  onClick={() => {
+                                    setIsProfileOpen(false);
+                                    setIsSettingsOpen(false);
+                                  }}
+                                  className={`flex w-full items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-xs font-semibold transition ${
+                                    isDarkMode ? 'text-slate-200 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  <RestoreFromTrashRoundedIcon sx={{ fontSize: 16 }} />
+                                  Recovery
                                 </Link>
                               </>
                             ) : null}

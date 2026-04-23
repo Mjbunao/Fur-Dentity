@@ -10,6 +10,7 @@ import {
 } from '../../utils';
 import { createActivityLog } from '@/lib/audit/activity-log';
 import { createAdminNotification } from '@/lib/notifications/admin-notification';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -85,6 +86,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     const petName = requestRecord.petName || reportRecord?.petName || reportRecord?.petID || 'Unknown pet';
 
     if (action === 'approve') {
+      if (!reportRecord) {
+        return Response.json({ error: 'Report record not found.' }, { status: 404 });
+      }
+
+      await archiveDeletedRecord({
+        idToken: verified.idToken,
+        path: `reports/${decoded.mainDir}/${decoded.subDir}/${decoded.reportId}`,
+        record: reportRecord as Record<string, unknown>,
+      });
+
       const deleteReportResponse = await fetch(
         `${databaseUrl}/tickets/${decoded.mainDir}/${decoded.subDir}/${decoded.reportId}.json?auth=${encodeURIComponent(verified.idToken)}`,
         {

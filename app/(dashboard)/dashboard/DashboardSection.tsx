@@ -573,23 +573,24 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
                       elevation={0}
                       className="fd-animate-fade-up"
                       sx={{
-                        p: 1.25,
-                        borderRadius: 2,
-                        bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.78)' : 'grey.50'),
+                        px: 0,
+                        py: 1.15,
+                        borderRadius: 0,
+                        bgcolor: 'transparent',
+                        borderBottom: '1px solid',
+                        borderColor: (theme) =>
+                          theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.16)' : 'rgba(148, 163, 184, 0.35)',
                         color: 'text.primary',
                         textDecoration: 'none',
                         animationDelay: `${120 + index * 90}ms`,
-                        transition: 'background-color 160ms ease, box-shadow 160ms ease, translate 160ms ease',
+                        boxShadow: 'none',
+                        transition: 'background-color 160ms ease, translate 160ms ease',
                         '&:hover': {
                           translate: '0 -2px',
                           bgcolor: (theme) =>
                             theme.palette.mode === 'dark'
-                              ? 'rgba(30, 41, 59, 0.92)'
-                              : 'rgba(241, 245, 249, 0.95)',
-                          boxShadow: (theme) =>
-                            theme.palette.mode === 'dark'
-                              ? '0 10px 24px rgba(0, 0, 0, 0.22)'
-                              : '0 10px 24px rgba(15, 23, 42, 0.07)',
+                              ? 'rgba(148, 163, 184, 0.06)'
+                              : 'rgba(241, 245, 249, 0.55)',
                         },
                       }}
                     >
@@ -638,24 +639,24 @@ export default function DashboardSection({ adminRole, adminName }: DashboardSect
                           elevation={0}
                           className="fd-animate-fade-up"
                           sx={{
-                            p: 1.25,
-                            borderRadius: 2,
-                            bgcolor: (theme) =>
-                              theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.78)' : 'grey.50',
+                            px: 0,
+                            py: 1.15,
+                            borderRadius: 0,
+                            bgcolor: 'transparent',
+                            borderBottom: '1px solid',
+                            borderColor: (theme) =>
+                              theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.16)' : 'rgba(148, 163, 184, 0.35)',
                             color: 'text.primary',
                             textDecoration: 'none',
                             animationDelay: `${120 + index * 90}ms`,
-                            transition: 'background-color 160ms ease, box-shadow 160ms ease, translate 160ms ease',
+                            boxShadow: 'none',
+                            transition: 'background-color 160ms ease, translate 160ms ease',
                             '&:hover': {
                               translate: '0 -2px',
                               bgcolor: (theme) =>
                                 theme.palette.mode === 'dark'
-                                  ? 'rgba(30, 41, 59, 0.92)'
-                                  : 'rgba(241, 245, 249, 0.95)',
-                              boxShadow: (theme) =>
-                                theme.palette.mode === 'dark'
-                                  ? '0 10px 24px rgba(0, 0, 0, 0.22)'
-                                  : '0 10px 24px rgba(15, 23, 42, 0.07)',
+                                  ? 'rgba(148, 163, 184, 0.06)'
+                                  : 'rgba(241, 245, 249, 0.55)',
                             },
                           }}
                         >

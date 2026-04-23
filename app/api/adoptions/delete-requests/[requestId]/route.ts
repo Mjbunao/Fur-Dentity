@@ -1,6 +1,7 @@
 import { databaseUrl, requireVerifiedAdmin, type AdoptionDeleteRequestRecord } from '../../utils';
 import { createActivityLog } from '@/lib/audit/activity-log';
 import { createAdminNotification } from '@/lib/notifications/admin-notification';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -45,6 +46,26 @@ export async function PATCH(request: Request, context: RouteContext) {
     const petPath = getPetPath(requestRecord.petStatus);
 
     if (action === 'approve') {
+      const existingPetResponse = await fetch(
+        `${databaseUrl}/catalogs/${petPath}/${encodeURIComponent(requestRecord.petId)}.json?auth=${encodeURIComponent(verified.idToken)}`,
+        { cache: 'no-store' }
+      );
+
+      if (!existingPetResponse.ok) {
+        return Response.json({ error: 'Failed to load adoption record before deletion.' }, { status: existingPetResponse.status });
+      }
+
+      const existingPet = (await existingPetResponse.json()) as Record<string, unknown> | null;
+      if (!existingPet) {
+        return Response.json({ error: 'Adoption record not found.' }, { status: 404 });
+      }
+
+      await archiveDeletedRecord({
+        idToken: verified.idToken,
+        path: `${petPath}/${requestRecord.petId}`,
+        record: existingPet,
+      });
+
       const deletePetResponse = await fetch(
         `${databaseUrl}/catalogs/${petPath}/${encodeURIComponent(requestRecord.petId)}.json?auth=${encodeURIComponent(verified.idToken)}`,
         {

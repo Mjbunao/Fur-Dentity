@@ -7,6 +7,7 @@ import {
   type ShelterPetRecord,
 } from '../utils';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -193,6 +194,12 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!existing) {
       return Response.json({ error: 'Adoption record not found.' }, { status: 404 });
     }
+
+    await archiveDeletedRecord({
+      idToken: verified.idToken,
+      path: `${path}/${petId}`,
+      record: existing as Record<string, unknown>,
+    });
 
     const response = await fetch(
       `${databaseUrl}/catalogs/${path}/${encodeURIComponent(petId)}.json?auth=${encodeURIComponent(verified.idToken)}`,

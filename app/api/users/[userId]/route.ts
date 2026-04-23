@@ -2,6 +2,7 @@ import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -168,6 +169,12 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!userRecord) {
       return Response.json({ error: 'User not found.' }, { status: 404 });
     }
+
+    await archiveDeletedRecord({
+      idToken: authContext.idToken,
+      path: `users/${userId}`,
+      record: userRecord as Record<string, unknown>,
+    });
 
     const response = await fetch(
       `${firebaseConfig.databaseURL}/users/${encodeURIComponent(userId)}.json?auth=${encodeURIComponent(authContext.idToken)}`,

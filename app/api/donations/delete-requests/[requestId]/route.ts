@@ -3,6 +3,7 @@ import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
 import { createActivityLog } from '@/lib/audit/activity-log';
 import { createAdminNotification } from '@/lib/notifications/admin-notification';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -83,6 +84,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     const donorName = donationRecord?.name || requestRecord.donationName || 'Unknown donor';
 
     if (action === 'approve') {
+      if (!donationRecord) {
+        return Response.json({ error: 'Donation record not found.' }, { status: 404 });
+      }
+
+      await archiveDeletedRecord({
+        idToken,
+        path: `donation/${requestRecord.donationId}`,
+        record: donationRecord as Record<string, unknown>,
+      });
+
       const deleteDonationResponse = await fetch(
         `${firebaseConfig.databaseURL}/donations/${encodeURIComponent(requestRecord.donationId)}.json?auth=${encodeURIComponent(idToken)}`,
         {

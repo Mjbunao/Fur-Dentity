@@ -2,6 +2,7 @@ import { requireSession } from '@/lib/auth/session';
 import { firebaseConfig } from '@/lib/firebase-config';
 import { verifyFirebaseIdToken } from '@/lib/auth/firebase-server';
 import { createActivityLog } from '@/lib/audit/activity-log';
+import { archiveDeletedRecord } from '@/lib/archive/trash';
 
 type RouteContext = {
   params: Promise<{
@@ -66,6 +67,12 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (!adminRecord) {
       return Response.json({ error: 'System admin record not found.' }, { status: 404 });
     }
+
+    await archiveDeletedRecord({
+      idToken,
+      path: `admins/${uid}`,
+      record: adminRecord as Record<string, unknown>,
+    });
 
     const response = await fetch(
       `${firebaseConfig.databaseURL}/admins/${encodeURIComponent(uid)}.json?auth=${encodeURIComponent(idToken)}`,

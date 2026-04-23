@@ -197,7 +197,7 @@ export default function AdoptionDetailsPage({ petId, adminRole, adminUid, adminN
         return;
       }
 
-      window.location.href = '/adoption';
+      router.push('/adoption');
     } catch (deleteError) {
       console.error(deleteError);
       setError('Failed to delete adoption record.');

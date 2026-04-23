@@ -32,3 +32,4 @@ export {default as LightModeRoundedIcon} from '@mui/icons-material/LightModeRoun
 export {default as LogoutRoundedIcon} from '@mui/icons-material/LogoutRounded';
 export {default as AssessmentRoundedIcon} from '@mui/icons-material/AssessmentRounded';
 export {default as PictureAsPdfRoundedIcon} from '@mui/icons-material/PictureAsPdfRounded';
+export {default as RestoreFromTrashRoundedIcon} from '@mui/icons-material/RestoreFromTrashRounded';

@@ -500,3 +500,54 @@ Next:
 - Browser-test the latest General Reports summary grouping and section styling on both light and dark themes.
 - Decide later whether to reintroduce user demographics once the mobile/user records store that data consistently.
 - Continue migrating remaining legacy dashboard sections feature-by-feature.
+
+### 2026-04-23
+
+Done:
+
+- Added soft-delete recovery support for all current dashboard delete flows that remove important records:
+  - system admins
+  - users
+  - registered pets
+  - donations
+  - shelter/adoption pets
+  - reports
+- Switched recovery/archive storage to the main Firebase Realtime Database under `deleted/...` because the current Firebase plan only supports one Realtime Database instance.
+- Added a super-admin-only Recovery page under profile Settings.
+- Added recovery listing with module filter, search, pagination, restore confirmation, and compact MUI table styling.
+- Added restore support that moves archived records back to their original active database path and removes them from `deleted/...`.
+- Added hard delete support beside Restore in the Recovery page:
+  - permanently removes the archived copy from `deleted/...`
+  - keeps the active database untouched
+  - requires super-admin verification
+  - writes an activity log entry for the permanent recovery deletion
+- Removed extra recovery subtext/path details from rows and restore dialogs so the UI stays simpler.
+- Fixed an adoption delete navigation/session issue:
+  - adoption delete now uses `router.push('/adoption')` instead of forcing a full browser reload
+  - dashboard session validation now waits for Firebase `onAuthStateChanged` before treating the session as expired
+- Verified the latest recovery, hard-delete, and adoption/session changes with `npx tsc --noEmit`.
+
+Important database rule:
+
+- The main Realtime Database must allow super admins to read/write `deleted` records:
+
+```json
+"deleted": {
+  ".read": "auth != null && root.child('admins').child(auth.uid).child('role').val() === 'super_admin'",
+  ".write": "auth != null && root.child('admins').child(auth.uid).child('role').val() === 'super_admin'"
+}
+```
+
+Current delete/recovery flow:
+
+- `system_admin` requests deletion where a module uses delete requests.
+- `super_admin` can approve/reject the request.
+- When an actual delete happens, the record is archived into `deleted/...` before the active record is removed.
+- `super_admin` can restore records from Recovery.
+- `super_admin` can hard delete records from Recovery when the archive should be permanently removed.
+
+Next:
+
+- Browser-test Recovery restore and hard delete for each module type using safe sample records.
+- Scan remaining pages for forced page reloads like `window.location.href` or `window.location.reload()` and replace them with Next navigation/state refresh where possible.
+- Continue migrating remaining legacy dashboard sections feature-by-feature.

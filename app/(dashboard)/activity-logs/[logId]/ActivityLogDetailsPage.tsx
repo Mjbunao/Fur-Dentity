@@ -212,9 +212,9 @@ export default function ActivityLogDetailsPage({ logId }: { logId: string }) {
               sx={{
                 p: 1.5,
                 borderRadius: 2,
-                bgcolor: 'grey.50',
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.55)' : 'grey.50'),
                 border: '1px solid',
-                borderColor: 'grey.200',
+                borderColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.18)' : 'grey.200'),
               }}
             >
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
